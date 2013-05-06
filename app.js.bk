@@ -1,0 +1,299 @@
+/*
+    This file is generated and updated by Sencha Cmd. You can edit this file as
+    needed for your application, but these edits will have to be merged by
+    Sencha Cmd when it performs code generation tasks such as generating new
+    models, controllers or views and when running "sencha app upgrade".
+
+    Ideally changes to this file would be limited and most work would be done
+    in other places (such as Controllers). If Sencha Cmd cannot merge your
+    changes and its generated code, it will produce a "merge conflict" that you
+    will need to resolve manually.
+*/
+
+// DO NOT DELETE - this directive is required for Sencha Cmd packages to work.
+//@require @packageOverrides
+
+//<debug>
+Ext.Loader.setPath({
+    'Ext': 'touch/src',
+    'MyApp': 'app'
+});
+//</debug>
+/*
+Ext.define('MyApp.model.Lesson', {
+    extend: 'Ext.data.Model',
+    config: {
+	fields: [
+	    {name: 'length', type: 'int'},
+	    {name: 'topics', type: 'string', defaultValue: 'Unknown'}
+	]
+    }
+});
+
+Ext.data.Types.TOPIC = {
+    convert: function(v, data){
+	return new Topic(data.name, data.periods);
+    },
+    sortType: function(v) {
+	return v.Name;
+    },
+    type: 'Topic'
+};
+
+Ext.data.Types.PERIOD = {
+    convert: function(v, data){
+	return new Period(data.start, data.end);
+    },
+    sortType: function(v){
+	return v.Start;
+    },
+    type: 'Period'
+};
+var data = {
+    regions: [
+	{
+	    id: 'r0',
+	    start: 4,
+	    end: 28
+	},
+	{
+	    id: 'r1',
+	    start: 56,
+	    end: 85
+	}	
+    ]
+};*/
+
+Ext.define('Region', {
+    extend: 'Ext.data.Model',
+    config: {
+        fields: [
+            {name: 'id', type: 'int'},
+            {name: 'start', type: 'int'},
+            {name: 'end', type: 'int'}
+        ]
+    }
+});
+
+
+Ext.application({
+    name: 'MyApp',
+
+    requires: [
+	'Ext.draw.Component',
+        'Ext.MessageBox',
+	'Ext.TabPanel',
+	'Ext.dataview.NestedList',
+	'Ext.data.proxy.JsonP',
+	'Ext.form.FieldSet',
+	'Ext.form.Panel',
+	'Ext.field.Number',
+	'Ext.field.Slider',
+	'Ext.data.Store'
+    ],
+
+    views: [
+        'Main'
+    ],
+
+    icon: {
+        '57': 'resources/icons/Icon.png',
+        '72': 'resources/icons/Icon~ipad.png',
+        '114': 'resources/icons/Icon@2x.png',
+        '144': 'resources/icons/Icon~ipad@2x.png'
+    },
+
+    isIconPrecomposed: true,
+
+    startupImage: {
+        '320x460': 'resources/startup/320x460.jpg',
+        '640x920': 'resources/startup/640x920.png',
+        '768x1004': 'resources/startup/768x1004.png',
+        '748x1024': 'resources/startup/748x1024.png',
+        '1536x2008': 'resources/startup/1536x2008.png',
+        '1496x2048': 'resources/startup/1496x2048.png'
+    },
+
+    launch: function(){
+	console.log('launch');
+	// Destroy the #appLoadingIndicator element
+        Ext.fly('appLoadingIndicator').destroy();
+	
+	
+	var regionStore = Ext.create('Ext.data.Store', {
+	    model: 'Region',
+	    data: [
+		{id: 0, start: 4, end: 28},
+		{id: 1, start: 56, end: 85}
+	    ]
+	});
+	
+	this.drawComponent = new Ext.draw.Component({
+	    listeners: {
+		painted: function(){
+		    console.log('painted');
+		    var drawComponent = this;
+		    var numRegions = regionStore.getCount();
+		    var regionSet = regionStore.getData();
+		    var sprites = drawComponent.getSurface('main').getItems().items;
+		    var width = drawComponent.element.getWidth();
+		    console.log(numRegions);
+		    console.log(sprites);
+		    for(var i=0;i<numRegions;i++){
+			var region = regionSet.items[i].getData();
+			var sprite = sprites[i];
+			
+			var begin = (region.start/100)*width;
+			var length = ((region.end-region.start)/100)*width;
+			sprite.setAttributes({
+			    x: begin,
+			    width: length
+			}, true);
+		    }
+		}
+	    }
+	});
+	var drawComponent = this.drawComponent;
+	drawComponent.setWidth('100%');
+	drawComponent.setHeight('100px');
+	
+	regionStore.each(function(region){
+	    var sprite = drawComponent.getSurface('main').add({
+		type: 'rect',
+		id: region.id,
+		fill: '#79BB3F',
+		x: 0,
+		y: 0,
+		height: 100,
+		width: 0
+	    });
+	});	
+	/*var sprites = drawComponent.getSurface('main').getItems();
+	console.log(sprites);
+	for(sprite in sprites){
+	    sprite.on({
+		click: function(e, node){
+		    console.log('clicked on region '+sprite.id);
+		}
+	    });
+	}*/
+	drawComponent.element.on({
+	    click: function(e, node){
+		console.log('click heard on draw surface');
+	    }
+	});
+	
+
+        // INITIALIZE THE MAIN VIEW
+        Ext.create("Ext.TabPanel", {
+	    fullscreen: true,
+	    tabBarPosition: 'bottom',
+
+	    items: [
+		{
+		    title: 'Log',
+		    iconCls: 'user',
+		    xtype: 'formpanel',
+		    url: 'contact.php',
+		    layout: 'vbox',
+		    
+		    items: [
+			{
+			    xtype: 'fieldset',
+			    title: 'Lesson Breakdown',
+			    instructions: 'enter length of lesson and then specify regions',
+			    items: [
+				{
+				    xtype: 'numberfield',
+				    name: 'time',
+				    label: 'Lesson time',
+				    minValue: 5,
+				    maxValue: 120,
+				    stepValue: 5,
+				    listeners: {
+					change: function(){
+					    var v = this.getValue();
+					    var slider = Ext.getCmp('durationSlider').getComponent();
+					    slider.setMaxValue(v);
+					    console.log(slider.getMaxValue());
+					}
+				    }
+				},
+				{
+				    xtype: 'slider',
+				    name: 'durationSlider',
+				    id: 'durationSlider',
+				    label: 'Durations',
+				    minValue: 0,
+				    maxValue: 120,
+				    increment: 5,
+				    clickToChange: false,
+				    listeners: {
+					change: function (){
+					    Ext.getCmp('debug').setValue(this.getValues());
+					}
+				    }
+				},
+				{
+				    xtype: 'textfield',
+				    id: 'debug',
+				    label: 'value(s)',
+				    readOnly: true
+				},
+				{
+				    xtype: 'panel',
+				    name: 'drawWrapper',
+				    items: [drawComponent
+					/*{
+					    xtype: 'draw',
+					    id: 'drawSurface',
+					    width: '100%',
+					    height: '100px',
+					    items: [{
+						type: 'circle',
+						id: 'sprite1',
+						fill: '#79333F',
+						radius: 100,
+						x: 100,
+						y: 100
+					    }]
+					}*/
+				    ]
+				}
+				/*}
+				}*/
+			    ]
+			},
+			{
+			    xtype: 'button',
+			    text: 'Send',
+			    ui: 'confirm',
+			    handler: function(){
+				this.up('formpanel').submit();
+			    }
+			}
+		    ]
+		}
+	    ]
+	});
+    },
+    
+    onUpdated: function(){
+	console.log('updated');
+        Ext.Msg.confirm(
+            "Application Update",
+            "This application has just successfully been updated to the latest version. Reload now?",
+            function(buttonId) {
+                if (buttonId === 'yes') {
+                    window.location.reload();
+                }
+            }
+        );
+    },
+
+    onReady: function(){
+	console.log('ready');
+    }
+});
+
+

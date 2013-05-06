@@ -1,0 +1,10 @@
+Ext.define('App.model.Region', {
+    extend: 'Ext.data.Model',
+    config: {
+	fields: [
+	    {name: 'id', type: 'string'},
+	    {name: 'start', type: 'int'},
+	    {name: 'end', type: 'int'}
+	]
+    }
+});
