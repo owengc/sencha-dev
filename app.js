@@ -19,69 +19,46 @@ Ext.Loader.setPath({
     'MyApp': 'app'
 });
 //</debug>
-/*
-Ext.define('MyApp.model.Lesson', {
+
+Ext.define('Standard', {
     extend: 'Ext.data.Model',
     config: {
 	fields: [
-	    {name: 'length', type: 'int'},
-	    {name: 'topics', type: 'string', defaultValue: 'Unknown'}
-	]
+	    {name: 'standardId', type: 'int'},
+	    {name: 'standardDesc', type: 'string'},
+	    {name: 'num', type: 'int'}
+	],
+	hasMany: {
+	    model: 'Region',
+	    name: 'regions'
+	}
     }
 });
-
-Ext.data.Types.TOPIC = {
-    convert: function(v, data){
-	return new Topic(data.name, data.periods);
-    },
-    sortType: function(v) {
-	return v.Name;
-    },
-    type: 'Topic'
-};
-
-Ext.data.Types.PERIOD = {
-    convert: function(v, data){
-	return new Period(data.start, data.end);
-    },
-    sortType: function(v){
-	return v.Start;
-    },
-    type: 'Period'
-};
-var data = {
-    regions: [
-	{
-	    id: 'r0',
-	    start: 4,
-	    end: 28
-	},
-	{
-	    id: 'r1',
-	    start: 56,
-	    end: 85
-	}	
-    ]
-};*/
 
 Ext.define('Region', {
     extend: 'Ext.data.Model',
     config: {
-        fields: [
-            {name: 'id', type: 'int'},
-            {name: 'start', type: 'int'},
-            {name: 'end', type: 'int'}
-        ]
+	fields: [
+	    {name: 'regionId', type: 'int'},
+	    {name: 'regionStart', type: 'int'},
+	    {name: 'regionEnd', type: 'int'},
+	    {name: 'regionDuration', type: 'int'}
+	],
+	belongsTo: {
+	    model: 'Standard',
+	    name: 'standard'
+	}
     }
 });
 
+var chart, rangeSelector;
 
 Ext.application({
     name: 'MyApp',
-
+    
     requires: [
 	'Ext.draw.Component',
-        'Ext.MessageBox',
+	'Ext.MessageBox',
 	'Ext.TabPanel',
 	'Ext.dataview.NestedList',
 	'Ext.data.proxy.JsonP',
@@ -89,26 +66,34 @@ Ext.application({
 	'Ext.form.Panel',
 	'Ext.field.Number',
 	'Ext.field.Slider',
-	'Ext.data.Store'
+	'Ext.data.Store',
+	'Ext.chart.Chart',
+	'Ext.chart.axis.Category',
+	'Ext.chart.axis.Numeric',
+	'Ext.chart.series.Scatter',
+	'Ext.SegmentedButton',
+	'Ext.Array',
+	'Ext.util.Region',
+	'Ext.util.Point'
     ],
-
+    
     views: [
         'Main'
     ],
-
+    
     icon: {
         '57': 'resources/icons/Icon.png',
         '72': 'resources/icons/Icon~ipad.png',
         '114': 'resources/icons/Icon@2x.png',
         '144': 'resources/icons/Icon~ipad@2x.png'
     },
-
+    
     isIconPrecomposed: true,
-
+    
     startupImage: {
         '320x460': 'resources/startup/320x460.jpg',
         '640x920': 'resources/startup/640x920.png',
-        '768x1004': 'resources/startup/768x1004.png',
+	'768x1004': 'resources/startup/768x1004.png',
         '748x1024': 'resources/startup/748x1024.png',
         '1536x2008': 'resources/startup/1536x2008.png',
         '1496x2048': 'resources/startup/1496x2048.png'
@@ -121,81 +106,150 @@ Ext.application({
 	
 	
 	var regionStore = Ext.create('Ext.data.Store', {
-	    model: 'Region',
+	    model: 'Standard',
 	    data: [
-		{id: 0, start: 4, end: 28},
-		{id: 1, start: 56, end: 85}
+		{
+		    id: 0,
+		    desc: 'Multiplication',
+		    num: 7,
+		    regions: [
+			{id: 0, start: 4, end: 28, duration: 24},
+			{id: 1, start: 56, end: 85, duration: 29}
+		    ]
+		}
 	    ]
 	});
 	
-	this.drawComponent = new Ext.draw.Component({
-	    listeners: {
-		painted: function(){
-		    console.log('painted');
-		    var drawComponent = this;
-		    var numRegions = regionStore.getCount();
-		    var regionSet = regionStore.getData();
-		    var sprites = drawComponent.getSurface('main').getItems().items;
-		    var width = drawComponent.element.getWidth();
-		    console.log(numRegions);
-		    console.log(sprites);
-		    for(var i=0;i<numRegions;i++){
-			var region = regionSet.items[i].getData();
-			var sprite = sprites[i];
-			
-			var begin = (region.start/100)*width;
-			var length = ((region.end-region.start)/100)*width;
-			sprite.setAttributes({
-			    x: begin,
-			    width: length
-			}, true);
+	
+	var buttons = [];
+	var i;
+	for(i=0;i<20;i++){
+	    var button = Ext.create('Ext.Button', {
+		index: i,
+		text: '&nbsp;',
+		width: '5%',
+		area: {},
+		pressed: false,
+		listeners: {
+		    element: 'element',
+		    resize: function(){
+			this.area = Ext.util.Region.getRegion(this.element);
+			console.log('button regions recorded');
 		    }
 		}
-	    }
-	});
-	var drawComponent = this.drawComponent;
-	drawComponent.setWidth('100%');
-	drawComponent.setHeight('100px');
-	
-	regionStore.each(function(region){
-	    var sprite = drawComponent.getSurface('main').add({
-		type: 'rect',
-		id: region.id,
-		fill: '#79BB3F',
-		x: 0,
-		y: 0,
-		height: 100,
-		width: 0
-	    });
-	});	
-	/*var sprites = drawComponent.getSurface('main').getItems();
-	console.log(sprites);
-	for(sprite in sprites){
-	    sprite.on({
-		click: function(e, node){
-		    console.log('clicked on region '+sprite.id);
+	    }); 
+	    buttons.push(button);
+	}
+	rangeSelector = Ext.create('Ext.SegmentedButton', {
+	    id: 'rangeSelector',
+	    name: 'rangeSelector',
+	    allowMultiple: true,
+	    layout: {
+		type: 'hbox',
+		pack: 'center',
+		align: 'stretchmax'
+	    },
+	    items: buttons,
+	    state: {
+		touchInProgress: false,
+		lastTouched: null
+	    },
+	    getPressedIndices: function(){
+		var pressedButtons = this.getPressedButtons();
+		var i=0, count=pressedButtons.length, pressedIndices = [];
+		for(;i<count;i++){
+		    pressedIndices.push(pressedButtons[i].index);
 		}
-	    });
-	}*/
-	drawComponent.element.on({
-	    click: function(e, node){
-		console.log('click heard on draw surface');
+		return pressedIndices;
+	    },
+	    toggleButtonByIndex: function(index){
+		var button = this.getItems().items[index],
+		pressedIndicesOld = this.getPressedIndices(),
+		pressedIndicesNew=[];
+		var wasPressed = this.isPressed(button);
+		if(wasPressed){
+		    var i=0, count=pressedIndicesOld.length;
+		    for(;i<count;i++){
+			if(pressedIndicesOld[i]!=index){
+			    pressedIndicesNew.push(pressedIndicesOld[i]);
+			}
+		    }
+		}
+		else{
+		    pressedIndicesNew = pressedIndicesOld.push(index);
+		}
+		this.setPressedButtons(pressedIndicesNew);
+	    },
+	    listeners: {
+		element: 'element',
+		touchstart: function(e){
+		    var buttons = this.getItems().items,
+		    i=0,
+		    count = buttons.length,
+		    button;
+		    for(;i<count;i++){
+			if(!buttons[i].area.isOutOfBoundX(e.pageX)){
+			    button = buttons[i];
+			    this.state.touchInProgress = true;
+			    this.state.lastTouched = button.index;
+			    this.toggleButtonByIndex(button.index);
+			    console.log('touchstart over button ' + button.index);
+			}
+		    }
+		},
+		touchmove: function(e){
+		    //console.log('touch held at position '+e.pageX + ", "+e.pageY);
+		    var buttons = this.getItems().items,
+		    i=0,
+		    count = buttons.length,
+		    button;
+		    for(;i<count;i++){
+			if(!buttons[i].area.isOutOfBoundX(e.pageX)){
+			    button = buttons[i];
+			    
+			    if(this.state.lastTouched!=button.index){
+				this.toggleButtonByIndex(button.index);
+				this.state.lastTouched=button.index;
+				console.log('touchmove over button ' + button.index);
+			    }
+			}
+		    }
+		    
+		},
+		touchend: function(e){
+		    var buttons = this.getItems().items,
+		    i=0,
+		    count = buttons.length,
+		    button;
+		    for(;i<count;i++){
+			if(!buttons[i].area.isOutOfBoundX(e.pageX)){
+			    button = buttons[i];
+			    this.state.touchInProgress = false;
+			    this.toggleButtonByIndex(button.index);
+			    console.log('touchend over button ' + button.index);
+			}
+		    }
+		    return false;
+		}
 	    }
 	});
-	
+		
 
         // INITIALIZE THE MAIN VIEW
         Ext.create("Ext.TabPanel", {
 	    fullscreen: true,
 	    tabBarPosition: 'bottom',
-
+	    
 	    items: [
 		{
 		    title: 'Log',
 		    iconCls: 'user',
 		    xtype: 'formpanel',
 		    url: 'contact.php',
-		    layout: 'vbox',
+		    layout: {
+			type: 'vbox',
+			align: 'stretch'
+		    },
 		    
 		    items: [
 			{
@@ -241,27 +295,10 @@ Ext.application({
 				    readOnly: true
 				},
 				{
-				    xtype: 'panel',
-				    name: 'drawWrapper',
-				    items: [drawComponent
-					/*{
-					    xtype: 'draw',
-					    id: 'drawSurface',
-					    width: '100%',
-					    height: '100px',
-					    items: [{
-						type: 'circle',
-						id: 'sprite1',
-						fill: '#79333F',
-						radius: 100,
-						x: 100,
-						y: 100
-					    }]
-					}*/
-				    ]
+				    xtype: 'container',
+				    padding: 10,
+				    items: [rangeSelector]
 				}
-				/*}
-				}*/
 			    ]
 			},
 			{
@@ -276,6 +313,8 @@ Ext.application({
 		}
 	    ]
 	});
+
+//	Ext.Viewport.add(chart);
     },
     
     onUpdated: function(){
