@@ -163,7 +163,6 @@ Ext.application({
 		}
 		return pressedIndices;
 	    },
-//	    toggleButton: function
 	    toggleButtonByIndex: function(index){
 		var button = this.getItems().items[index],
 		pressedIndicesOld = this.getPressedIndices(),
@@ -187,7 +186,6 @@ Ext.application({
 		this.setPressedButtons(pressedIndicesNew);
 		console.log('toggled by index: '+index);
 		console.log('selected: '+this.getPressedIndices().toString());
-		//this.fireEvent('toggle', this, button, wasPressed, {});
 	    },/*
 	    getRegionByButtonIndex: function(index){
 		var button = this.getItems().items[index],
@@ -276,6 +274,19 @@ Ext.application({
 		    
 		    //console.log('touchend: '+this.getPressedIndices().toString());
 		    //return false;
+		},
+		tap: function(e){
+		    var buttons = this.getItems().items,
+		    i=0,
+		    count = buttons.length,
+		    button;
+		    for(;i<count;i++){
+			if(!buttons[i].area.isOutOfBoundX(e.pageX)){
+			    button = buttons[i];
+			    break;
+			}
+		    }
+		    this.toggleButtonByIndex(button.index);
 		}
 	    }
 	});
