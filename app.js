@@ -155,6 +155,19 @@ Ext.application({
 		lastTouched: null
 	    },
 	    regions: [],
+	    getButtonByTouch: function(pageX){
+		var buttons = this.getItems().items,
+		i=0,
+		count = buttons.length,
+		button;
+		for(;i<count;i++){
+		    if(!buttons[i].area.isOutOfBoundX(pageX)){
+			button = buttons[i];
+			break;
+		    }   
+		}
+		return button;
+	    },
 	    getPressedIndices: function(){
 		var pressedButtons = this.getPressedButtons();
 		var i=0, count=pressedButtons.length, pressedIndices = [];
@@ -186,10 +199,10 @@ Ext.application({
 		this.setPressedButtons(pressedIndicesNew);
 		console.log('toggled by index: '+index);
 		console.log('selected: '+this.getPressedIndices().toString());
-	    },/*
+	    },
 	    getRegionByButtonIndex: function(index){
 		var button = this.getItems().items[index],
-		i,=0,
+		i=0,
 		count = this.regions.count,
 		region={
 		    start: index,
@@ -200,24 +213,17 @@ Ext.application({
 			return this.regions[i];
 		    }
 		}
+		console.log('region found: start='+region.start+', end='+region.end);
 		return region;
-	    },*/
+	    },
 	    listeners: {
 		toggle: function(){
 		    console.log('toggle');
 		},
 		element: 'element',
 		touchstart: function(e){
-		    var buttons = this.getItems().items,
-		    i=0,
-		    count = buttons.length,
-		    button;
-		    for(;i<count;i++){
-			if(!buttons[i].area.isOutOfBoundX(e.pageX)){
-			    button = buttons[i];
-			    break;
-			}
-		    }
+		    var button = this.getButtonByTouch(e.pageX);
+		    
 		    this.state.touchInProgress = true;
 		    this.state.touched = button.index;
 		    this.state.lastTouched = null;
@@ -228,66 +234,38 @@ Ext.application({
 		    //return false;
 		},
 		touchmove: function(e){
-		    //console.log('touch held at position '+e.pageX + ", "+e.pageY);
-		    var buttons = this.getItems().items,
-		    i=0,
-		    count = buttons.length,
-		    button;
-		    for(;i<count;i++){
-			if(!buttons[i].area.isOutOfBoundX(e.pageX)){
-			    button = buttons[i];
-			    console.log(button.index);
-			    break;
-			}
-		    }
+		    var button = this.getButtonByTouch(e.pageX);
+
 		    if(this.state.touched!=button.index){	
 			this.state.lastTouched=this.state.touched
 			this.state.touched=button.index;
 		
-			//console.log('touchmove over button ' + button.index);
-
 			this.toggleButtonByIndex(this.state.touched);
-			
-			
-			
-			//console.log(button.getCls());
+			//console.log('touchmove over button ' + button.index);	
+			//console.log('touchmove: '+this.getPressedIndices().toString());
 		    }
-		    //console.log('touchmove: '+this.getPressedIndices().toString());
-		    return false;
+		    //return false;
 		},
 		touchend: function(e){
-		    var buttons = this.getItems().items,
-		    i=0,
-		    count = buttons.length,
-		    button;
-		    for(;i<count;i++){
-			if(!buttons[i].area.isOutOfBoundX(e.pageX)){
-			    button = buttons[i];
-			    break;
-			}
-		    }
-		    //console.log('touchend over button ' + button.index);
+		    var button = this.getButtonByTouch(e.pageX);
 		    
 		    this.state.touchInProgress = false;
 		    this.state.touched = null;
 		    this.state.lastTouched = null;
 		    
+		    //console.log('touchend over button ' + button.index);
 		    //console.log('touchend: '+this.getPressedIndices().toString());
 		    //return false;
 		},
 		tap: function(e){
-		    var buttons = this.getItems().items,
-		    i=0,
-		    count = buttons.length,
-		    button;
-		    for(;i<count;i++){
-			if(!buttons[i].area.isOutOfBoundX(e.pageX)){
-			    button = buttons[i];
-			    break;
-			}
-		    }
+		    var button = this.getButtonByTouch(e.pageX);
+
 		    this.toggleButtonByIndex(button.index);
+		    //console.log('tap on button '+button.index);
+		    //console.log('tap: '+this.getPressedIndices().toString());
+		    //return false;
 		}
+		    
 	    }
 	});
 	rangeSelector.onBefore('toggle', function(){return false;});
