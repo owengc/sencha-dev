@@ -120,10 +120,8 @@ Ext.application({
 	    ]
 	});
 	
-	
 	var buttons = [];
-	var i;
-	for(i=0;i<20;i++){
+	for(var i=0;i<20;i++){
 	    var button = Ext.create('Ext.Button', {
 		index: i,
 		text: '&nbsp;',
@@ -134,10 +132,11 @@ Ext.application({
 		    element: 'element',
 		    resize: function(){
 			this.area = Ext.util.Region.getRegion(this.element);
-			console.log('button regions recorded');
+			//console.log('button regions recorded');
+			//console.log(this.area.toString());
 		    }
 		}
-	    }); 
+	    });
 	    buttons.push(button);
 	}
 	rangeSelector = Ext.create('Ext.SegmentedButton', {
@@ -152,8 +151,10 @@ Ext.application({
 	    items: buttons,
 	    state: {
 		touchInProgress: false,
+		touched: null,
 		lastTouched: null
 	    },
+	    regions: [],
 	    getPressedIndices: function(){
 		var pressedButtons = this.getPressedButtons();
 		var i=0, count=pressedButtons.length, pressedIndices = [];
@@ -162,12 +163,15 @@ Ext.application({
 		}
 		return pressedIndices;
 	    },
+//	    toggleButton: function
 	    toggleButtonByIndex: function(index){
 		var button = this.getItems().items[index],
 		pressedIndicesOld = this.getPressedIndices(),
 		pressedIndicesNew=[];
 		var wasPressed = this.isPressed(button);
+		console.log('wasPressed: '+wasPressed);
 		if(wasPressed){
+		    console.log('pressedIndicesOld: '+pressedIndicesOld.toString());
 		    var i=0, count=pressedIndicesOld.length;
 		    for(;i<count;i++){
 			if(pressedIndicesOld[i]!=index){
@@ -176,11 +180,34 @@ Ext.application({
 		    }
 		}
 		else{
-		    pressedIndicesNew = pressedIndicesOld.push(index);
+		    pressedIndicesNew = pressedIndicesOld;
+		    pressedIndicesNew.push(index);
 		}
+		console.log('pressedIndicesNew: '+pressedIndicesNew.toString());
 		this.setPressedButtons(pressedIndicesNew);
-	    },
+		console.log('toggled by index: '+index);
+		console.log('selected: '+this.getPressedIndices().toString());
+		//this.fireEvent('toggle', this, button, wasPressed, {});
+	    },/*
+	    getRegionByButtonIndex: function(index){
+		var button = this.getItems().items[index],
+		i,=0,
+		count = this.regions.count,
+		region={
+		    start: index,
+		    end: index
+		};
+		for(;i<count;i++){
+		    if(index>=this.regions[i].start || index<=this.regions[i].end){
+			return this.regions[i];
+		    }
+		}
+		return region;
+	    },*/
 	    listeners: {
+		toggle: function(){
+		    console.log('toggle');
+		},
 		element: 'element',
 		touchstart: function(e){
 		    var buttons = this.getItems().items,
@@ -190,12 +217,17 @@ Ext.application({
 		    for(;i<count;i++){
 			if(!buttons[i].area.isOutOfBoundX(e.pageX)){
 			    button = buttons[i];
-			    this.state.touchInProgress = true;
-			    this.state.lastTouched = button.index;
-			    this.toggleButtonByIndex(button.index);
-			    console.log('touchstart over button ' + button.index);
+			    break;
 			}
 		    }
+		    this.state.touchInProgress = true;
+		    this.state.touched = button.index;
+		    this.state.lastTouched = null;
+		
+		    this.toggleButtonByIndex(button.index);
+		    //console.log('touchstart over button ' + button.index);
+		    //console.log('touchstart: '+this.getPressedIndices().toString());
+		    //return false;
 		},
 		touchmove: function(e){
 		    //console.log('touch held at position '+e.pageX + ", "+e.pageY);
@@ -206,15 +238,24 @@ Ext.application({
 		    for(;i<count;i++){
 			if(!buttons[i].area.isOutOfBoundX(e.pageX)){
 			    button = buttons[i];
-			    
-			    if(this.state.lastTouched!=button.index){
-				this.toggleButtonByIndex(button.index);
-				this.state.lastTouched=button.index;
-				console.log('touchmove over button ' + button.index);
-			    }
+			    console.log(button.index);
+			    break;
 			}
 		    }
-		    
+		    if(this.state.touched!=button.index){	
+			this.state.lastTouched=this.state.touched
+			this.state.touched=button.index;
+		
+			//console.log('touchmove over button ' + button.index);
+
+			this.toggleButtonByIndex(this.state.touched);
+			
+			
+			
+			//console.log(button.getCls());
+		    }
+		    //console.log('touchmove: '+this.getPressedIndices().toString());
+		    return false;
 		},
 		touchend: function(e){
 		    var buttons = this.getItems().items,
@@ -224,15 +265,21 @@ Ext.application({
 		    for(;i<count;i++){
 			if(!buttons[i].area.isOutOfBoundX(e.pageX)){
 			    button = buttons[i];
-			    this.state.touchInProgress = false;
-			    this.toggleButtonByIndex(button.index);
-			    console.log('touchend over button ' + button.index);
+			    break;
 			}
 		    }
-		    return false;
+		    //console.log('touchend over button ' + button.index);
+		    
+		    this.state.touchInProgress = false;
+		    this.state.touched = null;
+		    this.state.lastTouched = null;
+		    
+		    //console.log('touchend: '+this.getPressedIndices().toString());
+		    //return false;
 		}
 	    }
 	});
+	rangeSelector.onBefore('toggle', function(){return false;});
 		
 
         // INITIALIZE THE MAIN VIEW
