@@ -4018,7 +4018,7 @@ body.x-desktop {
 }
 /* line 202, /Users/jamieavins/git/SDK/touch/resources/themes/stylesheets/sencha-touch/default/src/_Button.scss */
 .x-button.x-button-plain.x-button-pressing, .x-button.x-button-plain.x-button-pressed,
-.x-toolbar .x-button.x-button-plain.x-button-pressing,
+/*.x-toolbar .x-button.x-button-plain.x-button-pressing,*/
 .x-toolbar .x-button.x-button-plain.x-button-pressed {
   background: none;
   background-image: -webkit-gradient(radial, 50% 50%, 0, 50% 50%, 24, color-stop(0%, rgba(182, 225, 255, 0.7)), color-stop(100%, rgba(182, 225, 255, 0)));
@@ -4059,6 +4059,38 @@ body.x-desktop {
 .x-segmentedbutton .x-button:not(.x-first) {
   border-left: 0;
 }
+
+/*CUSTOM...*/
+.o-rangeselector .x-button {
+  border: 0;
+  border-top: 1px solid lightgray;
+  border-bottom: 1px solid lightgray;
+  background: none;
+  background-image: -webkit-gradient(linear, 100% 100%, 0, 100% 100%, 34, color-stop(0%, rgba(180, 180, 180, 1)), color-stop(100%, rgba(200, 200, 200, 0.5)));
+  background-image: -webkit-linear-gradient(rgba(180, 180, 180, 1), rgba(200, 200, 200, 0.5) 34px);
+  background-image: -moz-linear-gradient(rgba(180, 180, 180, 1), rgba(200, 200, 200, 0.5) 34px);
+  background-image: -o-linear-gradient(rgba(180, 180, 180, 1), rgba(200, 200, 200, 0.5) 34px);
+  background-image: linear-gradient(rgba(180, 180, 180, 1), rgba(200, 200, 200, 0.5) 34px);
+}
+
+.o-rangeselector .x-button.x-first {
+    border-left: 1px solid lightgray;
+}
+
+.o-rangeselector .x-button.x-last {
+    border-right: 1px solid lightgray;
+}
+
+.o-rangeselector .x-button.x-button-pressed {
+    background: rgba(255, 245, 10, 1);
+    background-image: -webkit-gradient(linear, 100% 100%, 0, 100% 100%, 24, color-stop(0%, rgba(255, 235, 0, 0)), color-stop(100%, rgba(255, 160, 0, 0.7)));
+    background-image: -webkit-linear-gradient(rgba(255, 235, 0, 0), rgba(255, 160, 0, 0.7) 24px);
+    background-image: -moz-linear-gradient(rgba(225, 255, 235, 0, 0), rgba(255, 160, 0, 0.7) 24px);
+    background-image: -o-linear-gradient(rgba(225, 255, 235, 0, 0), rgba(255, 160, 0, 0.7) 24px);
+    background-image: linear-gradient(rgba(255, 235, 0, 0), rgba(255, 160, 0, 0.7) 24px);
+}
+
+/*...CUSTOM*/
 
 /* line 238, /Users/jamieavins/git/SDK/touch/resources/themes/stylesheets/sencha-touch/default/src/_Button.scss */
 .x-hasbadge {
