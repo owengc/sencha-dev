@@ -57,20 +57,13 @@ Ext.application({
     name: 'MyApp',
     
     requires: [
-	'Ext.draw.Component',
 	'Ext.MessageBox',
 	'Ext.TabPanel',
-	'Ext.dataview.NestedList',
 	'Ext.data.proxy.JsonP',
 	'Ext.form.FieldSet',
 	'Ext.form.Panel',
 	'Ext.field.Number',
-	'Ext.field.Slider',
 	'Ext.data.Store',
-	'Ext.chart.Chart',
-	'Ext.chart.axis.Category',
-	'Ext.chart.axis.Numeric',
-	'Ext.chart.series.Scatter',
 	'Ext.SegmentedButton',
 	'Ext.Array',
 	'Ext.util.Region',
@@ -336,7 +329,7 @@ Ext.application({
 		tap: function(e){
 		    var button = this.getButtonByTouch(e.pageX);
 
-		    //this.toggleButtonByIndex(button.index);
+		    this.toggleButtonByIndex(button.index);
 		    //console.log('tap on button '+button.index);
 		    //console.log('tap: '+this.getPressedIndices().toString());
 		    //return false;
@@ -379,7 +372,7 @@ Ext.application({
 			    title: 'Lesson Breakdown',
 			    instructions: 'enter length of lesson and then specify regions',
 			    items: [
-				{
+				/*{
 				    xtype: 'numberfield',
 				    name: 'time',
 				    label: 'Lesson time',
@@ -415,7 +408,7 @@ Ext.application({
 				    id: 'debug',
 				    label: 'value(s)',
 				    readOnly: true
-				},
+				},*/
 				{
 				    xtype: 'container',
 				    padding: 10,
