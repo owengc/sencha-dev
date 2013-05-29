@@ -50,7 +50,260 @@ Ext.define('Region', {
 	}
     }
 });
+/*
+Ext.define('iPad2.view.component.RegionSelectorButton', {
 
+});*/
+
+Ext.define('iPad2.view.component.RegionSelector', {
+    extend: 'Ext.SegmentedButton',
+    alias: 'widget.regionselector',
+    xtype: 'regionselectfield',
+    requires: [
+	'Ext.SegmentedButton',
+	'Ext.Button'
+    ],
+    config: {
+	layout: {
+	    type: 'hbox',
+	    pack: 'center',
+	    align: 'stretchmax'
+	},
+	cls: 'o-rangeselector',
+	allowMultiple: true
+    },
+   
+    area: {},
+    items: [],
+    state: {},
+    regions: [],
+    total: 0,
+    
+    initComponent: function(){
+	//var buttons = [];
+	for(var i=0;i<20;i++){
+	    var button = Ext.create('Ext.Button', {
+		index: i,
+		text: '&nbsp;',
+		width: '5%',
+		area: {},
+		pressed: false,
+		listeners: {
+		    element: 'element',
+		    resize: function(){
+			this.area = Ext.util.Region.getRegion(this.element);
+			//console.log('button regions recorded');
+			//console.log(this.area.toString());
+		    }
+		}
+	    });
+	    //buttons.push(button);
+	    this.items.push(button);
+	}
+	/*
+	var regions = [
+	    {id: 0, start: 0, end: 4, percentage: 25},
+	    {id: 1, start: 11, end: 18, percentage: 40}
+	];*/
+    },
+
+
+
+
+
+
+    getButtonByTouch: function(pageX){
+	var buttons = this.getItems().items,
+	i=0,
+	buttonCount = buttons.length,
+	button;
+	for(;i<buttonCount;i++){
+	    if(!buttons[i].area.isOutOfBoundX(pageX)){
+		button = buttons[i];
+		break;
+	    }   
+	}
+	if(!button){
+	    if(this.area.isOutOfBoundX(pageX)){
+		if(this.area.getOutOfBoundOffsetX(pageX)>0){
+		    button = buttons[0];
+		}
+		else{
+		    button = buttons[count-1];
+		}
+		//console.log(this.area.getOutOfBoundOffsetX(pageX));
+	    }
+	}
+	return button;
+    },
+    getPressedIndices: function(){
+	var pressedButtons = this.getPressedButtons();
+	var i=0, pressedButtonCount=pressedButtons.length, pressedIndices = [];
+	for(;i<pressedButtonCount;i++){
+	    pressedIndices.push(pressedButtons[i].index);
+	}
+	return pressedIndices;
+    },
+    toggleButtonByIndex: function(index){
+	var button = this.getItems().items[index],
+	pressedIndicesOld = this.getPressedIndices(),
+	pressedIndicesNew=[];
+	var wasPressed = this.isPressed(button);
+	//console.log('wasPressed: '+wasPressed);
+	if(wasPressed){
+	    //console.log('pressedIndicesOld: '+pressedIndicesOld.toString());
+	    var i=0, pressedButtonCountOld=pressedIndicesOld.length;
+	    for(;i<pressedButtonCountOld;i++){
+		if(pressedIndicesOld[i]!=index){
+		    pressedIndicesNew.push(pressedIndicesOld[i]);
+		}
+	    }
+	}
+	else{
+	    pressedIndicesNew = pressedIndicesOld;
+	    pressedIndicesNew.push(index);
+	}
+	//console.log('pressedIndicesNew: '+pressedIndicesNew.toString());
+	this.setPressedButtons(pressedIndicesNew);
+	//console.log('toggled by index: '+index);
+	//console.log('selected: '+this.getPressedIndices().toString());
+    },/*
+	getRegionByButtonIndex: function(index){
+	var button = this.getItems().items[index],
+	i=0,
+	regionCount = this.regions.count,
+	region={
+	id: regionCount,
+	start: index,
+	end: index,
+	percentage: 5
+	};
+	for(;i<regionCount;i++){
+	if(index>=this.regions[i].start || index<=this.regions[i].end){
+	console.log('region found: start='+this.regions[i].start+', end='+this.regions[i].end);
+	return this.regions[i];
+	}
+	}
+	console.log('new region: start='+region.start+', end='+region.end);
+	return region;
+	},*/
+    initializeRegions: function(){
+	var i=0,
+	regionCount=this.regions.length,
+	initialPressedIndices=[],
+	j=0;
+	for(;i<regionCount;i++){
+	    for(j=this.regions[i].start;j<=this.regions[i].end;j++){
+		initialPressedIndices.push(j);
+	    }
+	    this.total+=this.regions[i].percentage;
+	}
+	this.setPressedButtons(initialPressedIndices);
+	//console.log(this.total);	
+    },
+    recordRegions: function(){
+	var buttons = this.getItems().items,
+	i=0,
+	buttonCount=buttons.length,
+	tempRegions=[],
+	tempRegion=null;
+	this.total=0;
+	for(;i<buttonCount;i++){
+	    if(this.isPressed(buttons[i])){
+		if(tempRegion){
+		    tempRegion.end=i;
+		    if(i==(buttonCount-1)){
+			tempRegion.percentage=((tempRegion.end-tempRegion.start+1)/buttonCount)*100;
+			this.total+=tempRegion.percentage;
+			tempRegions.push(tempRegion);
+			tempRegion=null
+		    }
+		}
+		else{
+		    tempRegion=new Object();
+		    tempRegion.id=tempRegions.length;
+		    tempRegion.start=i;
+		    tempRegion.end=i;
+		}
+	    }
+	    else{
+		if(tempRegion){
+		    tempRegion.percentage=((tempRegion.end-tempRegion.start+1)/buttonCount)*100;
+		    this.total+=tempRegion.percentage;
+		    tempRegions.push(tempRegion);
+		    tempRegion=null;
+		}
+	    }
+	}
+	this.regions=tempRegions;
+	this.displayTotal();
+	//console.log('regions: '+this.regions.toString())
+	//console.log(this.total);
+    },
+    displayTotal: function(){
+	Ext.getCmp('rangeSelectorTotal').setValue(this.total+'%');
+    },
+    listeners: {
+	element: 'element',
+	touchstart: function(e){
+	    var button = this.getButtonByTouch(e.pageX);
+	    
+	    this.state.inProgress = true;
+	    this.state.touched = button.index;
+	    this.state.lastTouched = null;
+	    
+	    this.toggleButtonByIndex(button.index);
+	    //console.log('touchstart over button ' + button.index);
+	    //console.log('touchstart: '+this.getPressedIndices().toString());
+	    //return false;
+	},
+	touchmove: function(e){
+	    var button = this.getButtonByTouch(e.pageX);
+
+	    if(this.state.touched!=button.index){	
+		this.state.lastTouched=this.state.touched
+		this.state.touched=button.index;
+		
+		this.toggleButtonByIndex(this.state.touched);
+		//console.log('touchmove over button ' + button.index);	
+		//console.log('touchmove: '+this.getPressedIndices().toString());
+	    }
+	    //return false;
+	},
+	touchend: function(e){
+	    var button = this.getButtonByTouch(e.pageX);
+	    
+	    this.state.touchInProgress = false;
+	    this.state.touched = null;
+	    this.state.lastTouched = null;
+	    
+	    this.recordRegions();
+	    
+	    //console.log('touchend over button ' + button.index);
+	    //console.log('touchend: '+this.getPressedIndices().toString());
+	    //return false;
+	},
+	tap: function(e){
+	    var button = this.getButtonByTouch(e.pageX);
+
+	    this.toggleButtonByIndex(button.index);
+	    //console.log('tap on button '+button.index);
+	    //console.log('tap: '+this.getPressedIndices().toString());
+	    //return false;
+	},
+	longpress: function(e){
+	    //console.log('longpress: ');
+	},
+	pinch: function(e){
+	    //console.log(e.touches[0].pageX, e.touches[1].pageX);
+	},
+	resize: function(){
+	    this.area = Ext.util.Region.getRegion(this.element);
+	    //console.log('container region recorded');
+	    //console.log(this.area.toString());
+	}
+    }
+});
 var chart, rangeSelector;
 
 Ext.application({
@@ -138,7 +391,6 @@ Ext.application({
 	    {id: 1, start: 11, end: 18, percentage: 40}
 	];
 
-
 	rangeSelector = Ext.create('Ext.SegmentedButton', {
 	    id: 'rangeSelector',
 	    name: 'rangeSelector',
@@ -152,7 +404,10 @@ Ext.application({
 	    area: {},
 	    items: buttons,
 	    state: {},
-	    regions: regions,
+	    regions: [
+		{id: 0, start: 0, end: 4, percentage: 25},
+		{id: 1, start: 11, end: 18, percentage: 40}
+	    ],
 	    total: 0,
 	    getButtonByTouch: function(pageX){
 		var buttons = this.getItems().items,
@@ -372,43 +627,6 @@ Ext.application({
 			    title: 'Lesson Breakdown',
 			    instructions: 'enter length of lesson and then specify regions',
 			    items: [
-				/*{
-				    xtype: 'numberfield',
-				    name: 'time',
-				    label: 'Lesson time',
-				    minValue: 5,
-				    maxValue: 120,
-				    stepValue: 5,
-				    listeners: {
-					change: function(){
-					    var v = this.getValue();
-					    var slider = Ext.getCmp('durationSlider').getComponent();
-					    slider.setMaxValue(v);
-					    console.log(slider.getMaxValue());
-					}
-				    }
-				},
-				{
-				    xtype: 'slider',
-				    name: 'durationSlider',
-				    id: 'durationSlider',
-				    label: 'Durations',
-				    minValue: 0,
-				    maxValue: 120,
-				    increment: 5,
-				    clickToChange: false,
-				    listeners: {
-					change: function (){
-					    Ext.getCmp('debug').setValue(this.getValues());
-					}
-				    }
-				},
-				{
-				    xtype: 'textfield',
-				    id: 'debug',
-				    label: 'value(s)',
-				    readOnly: true
-				},*/
 				{
 				    xtype: 'container',
 				    padding: 10,
@@ -451,8 +669,6 @@ Ext.application({
 		}
 	    ]
 	});
-
-//	Ext.Viewport.add(chart);
     },
     
     onUpdated: function(){
