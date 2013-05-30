@@ -492,7 +492,7 @@ Ext.application({
 					    ]
 					}
 				    ]
-				},
+				}/*,
 				{
 				    xtype: 'button',
 				    text: 'Send',
@@ -517,7 +517,7 @@ Ext.application({
 					);
 					//this.up('formpanel').submit();
 				    }
-				}
+				}*/
 			    ]
 			}
 		    ]
