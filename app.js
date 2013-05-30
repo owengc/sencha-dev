@@ -19,7 +19,7 @@ Ext.Loader.setPath({
     'MyApp': 'app'
 });
 //</debug>
-
+/*
 Ext.define('Standard', {
     extend: 'Ext.data.Model',
     config: {
@@ -50,15 +50,35 @@ Ext.define('Region', {
 	}
     }
 });
-/*
-Ext.define('iPad2.view.component.RegionSelectorButton', {
-
+*/
+/*Ext.define('iPad2.view.component.RegionSelectorButton', {
+    extend: 'Ext.Button',
+    xtype: 'rangeselectorbutton',
+    requires: [
+	'Ext.Button',
+	'Ext.util.Region'
+    ],
+    config: {
+	index: null,
+	text: '&nbsp;',
+	width: '5%',
+	area: {},
+	pressed: false,
+	listeners: {
+	    element: 'element',
+	    resize: function(){
+		this.setArea(Ext.util.Region.getRegion(this.element));
+		//console.log('button regions recorded');
+		//console.log(buttonContext.area.toString());
+	    }
+	}
+    }
 });*/
 
-Ext.define('iPad2.view.component.RegionSelector', {
+Ext.define('iPad2.view.component.RangeSelector', {
     extend: 'Ext.SegmentedButton',
-    alias: 'widget.regionselector',
-    xtype: 'regionselectfield',
+    alias: 'widget.rangeselector',
+    xtype: 'rangeselector',
     requires: [
 	'Ext.SegmentedButton',
 	'Ext.Button'
@@ -70,86 +90,167 @@ Ext.define('iPad2.view.component.RegionSelector', {
 	    align: 'stretchmax'
 	},
 	cls: 'o-rangeselector',
-	allowMultiple: true
+	allowMultiple: true,
+	increment: 5,
+	area: {},
+	items: [],
+	state: {
+	    touchInProgress: false,
+	    touched: null,
+	    lastTouched: null
+	},
+	regions: [
+	    {id: 0, start: 0, end: 4, percentage: 25},
+	    {id: 1, start: 11, end: 18, percentage: 40}
+	],
+	total: 0,
+	listeners: {
+	    element: 'element',
+	    touchstart: function(e){
+		var button=this.getButtonByTouch(e.pageX),
+		state=this.getState();
+
+		if(button){
+		    state.touchInProgress=true;
+		    state.touched=button.index;
+		    state.lastTouched=null;
+		    this.toggleButtonByIndex(button.index);
+		    //console.log('touchstart over button ' + buttonId);
+		    //console.log('touchstart: '+this.getPressedIndices().toString());
+		}
+	    },
+	    touchmove: function(e){
+		var button=this.getButtonByTouch(e.pageX),
+		state=this.getState();
+
+		if(button && state.touchInProgress && state.touched!=button.index){	
+		    state.lastTouched=state.touched
+		    state.touched=button.index;
+		    
+		    var lastButton=this.getButtonByIndex(state.lastTouched);
+		    if(this.isPressed(lastButton)==this.isPressed(button)){
+			state.touchInProgress=false;
+		    }
+		    else{
+			this.toggleButtonByIndex(button.index);
+			this.recordTotal();
+		    }
+		    //console.log('touchmove over button ' + button.index);	
+		    //console.log('touchmove: '+this.getPressedIndices().toString());
+		}
+	    },
+	    touchend: function(e){
+		var button=this.getButtonByTouch(e.pageX),
+		state=this.getState();
+		
+		state.touchInProgress=false;
+		state.touched=null;
+		state.lastTouched=null;
+		
+		this.recordRegions();
+		
+		//console.log('touchend over button ' + button.index);
+		//console.log('touchend: '+this.getPressedIndices().toString());
+	    },
+	    tap: function(e){
+		var button=this.getButtonByTouch(e.pageX);
+
+		if(button){
+		    this.toggleButtonByIndex(button.index);
+		    //console.log('tap on button '+button.index);
+		    //console.log('tap: '+this.getPressedIndices().toString());
+		}
+	    },
+	    longpress: function(e){
+		//console.log('longpress: ');
+	    },
+	    pinch: function(e){
+		//console.log(e.touches[0].pageX, e.touches[1].pageX);
+	    },
+	    resize: function(){
+		this.setArea(Ext.util.Region.getRegion(this.element));
+		//console.log('container region recorded');
+		//console.log(this.area.toString());
+	    }
+	}
     },
-   
-    area: {},
-    items: [],
-    state: {},
-    regions: [],
-    total: 0,
-    
-    initComponent: function(){
-	//var buttons = [];
-	for(var i=0;i<20;i++){
-	    var button = Ext.create('Ext.Button', {
+ 
+    constructor: function(config) {
+	this.callParent(config);
+
+	var increment=this.getIncrement(),
+	numButtons=(100/increment),
+	i=0;
+
+	for(;i<numButtons;i++){
+	    var button=Ext.create('Ext.Button', {
 		index: i,
 		text: '&nbsp;',
-		width: '5%',
+		width: increment+'%',
 		area: {},
 		pressed: false,
 		listeners: {
 		    element: 'element',
 		    resize: function(){
-			this.area = Ext.util.Region.getRegion(this.element);
+			var buttonContext=this;
+			buttonContext.area=Ext.util.Region.getRegion(this.element);
 			//console.log('button regions recorded');
-			//console.log(this.area.toString());
+			//console.log(buttonContext.area.toString());
 		    }
 		}
 	    });
-	    //buttons.push(button);
-	    this.items.push(button);
+	    this.add(button);
 	}
-	/*
-	var regions = [
-	    {id: 0, start: 0, end: 4, percentage: 25},
-	    {id: 1, start: 11, end: 18, percentage: 40}
-	];*/
+	this.initializeRegions();
+	//console.log(this.getItems().items);
     },
-
-
-
-
-
-
+    
     getButtonByTouch: function(pageX){
-	var buttons = this.getItems().items,
-	i=0,
-	buttonCount = buttons.length,
-	button;
+	var buttons=this.getItems().items,
+	buttonCount=buttons.length,
+	button,
+	rangeSelectorArea=this.getArea(),
+	i=0;
+
 	for(;i<buttonCount;i++){
 	    if(!buttons[i].area.isOutOfBoundX(pageX)){
-		button = buttons[i];
+		button=buttons[i];
 		break;
 	    }   
 	}
 	if(!button){
-	    if(this.area.isOutOfBoundX(pageX)){
-		if(this.area.getOutOfBoundOffsetX(pageX)>0){
-		    button = buttons[0];
+	    if(rangeSelectorArea.isOutOfBoundX(pageX)){
+		if(rangeSelectorArea.getOutOfBoundOffsetX(pageX)>0){
+		    button=buttons[0];
 		}
 		else{
-		    button = buttons[count-1];
+		    button=buttons[buttonCount-1];
 		}
-		//console.log(this.area.getOutOfBoundOffsetX(pageX));
+		//console.log(rangeSelectorArea.getOutOfBoundOffsetX(pageX));
 	    }
 	}
 	return button;
     },
+    getButtonByIndex: function(index){
+	return this.getAt(index);
+    },
     getPressedIndices: function(){
-	var pressedButtons = this.getPressedButtons();
-	var i=0, pressedButtonCount=pressedButtons.length, pressedIndices = [];
+	var pressedButtons=this.getPressedButtons(),
+	pressedButtonCount=pressedButtons.length, 
+	pressedIndices=[],
+	i=0;
+
 	for(;i<pressedButtonCount;i++){
 	    pressedIndices.push(pressedButtons[i].index);
 	}
 	return pressedIndices;
     },
     toggleButtonByIndex: function(index){
-	var button = this.getItems().items[index],
-	pressedIndicesOld = this.getPressedIndices(),
-	pressedIndicesNew=[];
-	var wasPressed = this.isPressed(button);
-	//console.log('wasPressed: '+wasPressed);
+	var button=this.getItems().items[index],
+	pressedIndicesOld=this.getPressedIndices(),
+	pressedIndicesNew=[],
+	wasPressed=this.isPressed(button);
+
 	if(wasPressed){
 	    //console.log('pressedIndicesOld: '+pressedIndicesOld.toString());
 	    var i=0, pressedButtonCountOld=pressedIndicesOld.length;
@@ -160,7 +261,7 @@ Ext.define('iPad2.view.component.RegionSelector', {
 	    }
 	}
 	else{
-	    pressedIndicesNew = pressedIndicesOld;
+	    pressedIndicesNew=pressedIndicesOld;
 	    pressedIndicesNew.push(index);
 	}
 	//console.log('pressedIndicesNew: '+pressedIndicesNew.toString());
@@ -169,9 +270,9 @@ Ext.define('iPad2.view.component.RegionSelector', {
 	//console.log('selected: '+this.getPressedIndices().toString());
     },/*
 	getRegionByButtonIndex: function(index){
-	var button = this.getItems().items[index],
+	var button=this.getItems().items[index],
 	i=0,
-	regionCount = this.regions.count,
+	regionCount=this.regions.count,
 	region={
 	id: regionCount,
 	start: index,
@@ -188,33 +289,38 @@ Ext.define('iPad2.view.component.RegionSelector', {
 	return region;
 	},*/
     initializeRegions: function(){
-	var i=0,
-	regionCount=this.regions.length,
+	var regions=this.getRegions(),
+	regionCount=regions.length,
 	initialPressedIndices=[],
-	j=0;
+	i=0,
+	j=0,
+	total=0;
+
 	for(;i<regionCount;i++){
-	    for(j=this.regions[i].start;j<=this.regions[i].end;j++){
+	    for(j=regions[i].start;j<=regions[i].end;j++){
 		initialPressedIndices.push(j);
 	    }
-	    this.total+=this.regions[i].percentage;
+	    total+=regions[i].percentage;
 	}
 	this.setPressedButtons(initialPressedIndices);
-	//console.log(this.total);	
+	this.setTotal(total);
+	//console.log(this.getTotal());	
     },
     recordRegions: function(){
-	var buttons = this.getItems().items,
-	i=0,
+	var buttons=this.getItems().items,
 	buttonCount=buttons.length,
 	tempRegions=[],
-	tempRegion=null;
-	this.total=0;
+	tempRegion=null,
+	i=0,
+	total=0;
+
 	for(;i<buttonCount;i++){
 	    if(this.isPressed(buttons[i])){
 		if(tempRegion){
 		    tempRegion.end=i;
-		    if(i==(buttonCount-1)){
+		    if(i==(buttonCount-1)){//edge-case solution.
 			tempRegion.percentage=((tempRegion.end-tempRegion.start+1)/buttonCount)*100;
-			this.total+=tempRegion.percentage;
+			total+=tempRegion.percentage;
 			tempRegions.push(tempRegion);
 			tempRegion=null
 		    }
@@ -229,81 +335,38 @@ Ext.define('iPad2.view.component.RegionSelector', {
 	    else{
 		if(tempRegion){
 		    tempRegion.percentage=((tempRegion.end-tempRegion.start+1)/buttonCount)*100;
-		    this.total+=tempRegion.percentage;
+		    total+=tempRegion.percentage;
 		    tempRegions.push(tempRegion);
 		    tempRegion=null;
 		}
 	    }
 	}
-	this.regions=tempRegions;
+	this.setRegions(tempRegions);
+	this.setTotal(total);
 	this.displayTotal();
 	//console.log('regions: '+this.regions.toString())
 	//console.log(this.total);
     },
-    displayTotal: function(){
-	Ext.getCmp('rangeSelectorTotal').setValue(this.total+'%');
-    },
-    listeners: {
-	element: 'element',
-	touchstart: function(e){
-	    var button = this.getButtonByTouch(e.pageX);
-	    
-	    this.state.inProgress = true;
-	    this.state.touched = button.index;
-	    this.state.lastTouched = null;
-	    
-	    this.toggleButtonByIndex(button.index);
-	    //console.log('touchstart over button ' + button.index);
-	    //console.log('touchstart: '+this.getPressedIndices().toString());
-	    //return false;
-	},
-	touchmove: function(e){
-	    var button = this.getButtonByTouch(e.pageX);
+    recordTotal: function(){
+	var buttons=this.getItems().items,
+	buttonCount=buttons.length,
+	increment=this.getIncrement(),
+	i=0,
+	total=0;
 
-	    if(this.state.touched!=button.index){	
-		this.state.lastTouched=this.state.touched
-		this.state.touched=button.index;
-		
-		this.toggleButtonByIndex(this.state.touched);
-		//console.log('touchmove over button ' + button.index);	
-		//console.log('touchmove: '+this.getPressedIndices().toString());
+	for(;i<buttonCount;i++){
+	    if(this.isPressed(buttons[i])){
+		total+=increment;
 	    }
-	    //return false;
-	},
-	touchend: function(e){
-	    var button = this.getButtonByTouch(e.pageX);
-	    
-	    this.state.touchInProgress = false;
-	    this.state.touched = null;
-	    this.state.lastTouched = null;
-	    
-	    this.recordRegions();
-	    
-	    //console.log('touchend over button ' + button.index);
-	    //console.log('touchend: '+this.getPressedIndices().toString());
-	    //return false;
-	},
-	tap: function(e){
-	    var button = this.getButtonByTouch(e.pageX);
-
-	    this.toggleButtonByIndex(button.index);
-	    //console.log('tap on button '+button.index);
-	    //console.log('tap: '+this.getPressedIndices().toString());
-	    //return false;
-	},
-	longpress: function(e){
-	    //console.log('longpress: ');
-	},
-	pinch: function(e){
-	    //console.log(e.touches[0].pageX, e.touches[1].pageX);
-	},
-	resize: function(){
-	    this.area = Ext.util.Region.getRegion(this.element);
-	    //console.log('container region recorded');
-	    //console.log(this.area.toString());
 	}
+	this.setTotal(total);
+	this.displayTotal();
+    },
+    displayTotal: function(){
+	this.up().down('textfield').setValue(Math.round(this.getTotal())+'%');
     }
 });
+
 var chart, rangeSelector;
 
 Ext.application({
@@ -351,7 +414,7 @@ Ext.application({
         Ext.fly('appLoadingIndicator').destroy();
 	
 	
-	var regionStore = Ext.create('Ext.data.Store', {
+	var regionStore=Ext.create('Ext.data.Store', {
 	    model: 'Standard',
 	    data: [
 		{
@@ -365,246 +428,14 @@ Ext.application({
 		}
 	    ]
 	});
-	
-	var buttons = [];
-	for(var i=0;i<20;i++){
-	    var button = Ext.create('Ext.Button', {
-		index: i,
-		text: '&nbsp;',
-		width: '5%',
-		area: {},
-		pressed: false,
-		listeners: {
-		    element: 'element',
-		    resize: function(){
-			this.area = Ext.util.Region.getRegion(this.element);
-			//console.log('button regions recorded');
-			//console.log(this.area.toString());
-		    }
-		}
-	    });
-	    buttons.push(button);
-	}
 
-	var regions = [
-	    {id: 0, start: 0, end: 4, percentage: 25},
-	    {id: 1, start: 11, end: 18, percentage: 40}
-	];
-
-	rangeSelector = Ext.create('Ext.SegmentedButton', {
-	    id: 'rangeSelector',
-	    name: 'rangeSelector',
-	    cls: 'o-rangeselector',
-	    allowMultiple: true,
-	    layout: {
-		type: 'hbox',
-		pack: 'center',
-		align: 'stretchmax'
-	    },
-	    area: {},
-	    items: buttons,
-	    state: {},
+	rangeSelector=Ext.create('iPad2.view.component.RangeSelector', {
+	    id: 'rangeSelector0',
 	    regions: [
 		{id: 0, start: 0, end: 4, percentage: 25},
 		{id: 1, start: 11, end: 18, percentage: 40}
-	    ],
-	    total: 0,
-	    getButtonByTouch: function(pageX){
-		var buttons = this.getItems().items,
-		i=0,
-		buttonCount = buttons.length,
-		button;
-		for(;i<buttonCount;i++){
-		    if(!buttons[i].area.isOutOfBoundX(pageX)){
-			button = buttons[i];
-			break;
-		    }   
-		}
-		if(!button){
-		    if(this.area.isOutOfBoundX(pageX)){
-			if(this.area.getOutOfBoundOffsetX(pageX)>0){
-			    button = buttons[0];
-			}
-			else{
-			    button = buttons[count-1];
-			}
-			//console.log(this.area.getOutOfBoundOffsetX(pageX));
-		    }
-		}
-		return button;
-	    },
-	    getPressedIndices: function(){
-		var pressedButtons = this.getPressedButtons();
-		var i=0, pressedButtonCount=pressedButtons.length, pressedIndices = [];
-		for(;i<pressedButtonCount;i++){
-		    pressedIndices.push(pressedButtons[i].index);
-		}
-		return pressedIndices;
-	    },
-	    toggleButtonByIndex: function(index){
-		var button = this.getItems().items[index],
-		pressedIndicesOld = this.getPressedIndices(),
-		pressedIndicesNew=[];
-		var wasPressed = this.isPressed(button);
-		//console.log('wasPressed: '+wasPressed);
-		if(wasPressed){
-		    //console.log('pressedIndicesOld: '+pressedIndicesOld.toString());
-		    var i=0, pressedButtonCountOld=pressedIndicesOld.length;
-		    for(;i<pressedButtonCountOld;i++){
-			if(pressedIndicesOld[i]!=index){
-			    pressedIndicesNew.push(pressedIndicesOld[i]);
-			}
-		    }
-		}
-		else{
-		    pressedIndicesNew = pressedIndicesOld;
-		    pressedIndicesNew.push(index);
-		}
-		//console.log('pressedIndicesNew: '+pressedIndicesNew.toString());
-		this.setPressedButtons(pressedIndicesNew);
-		//console.log('toggled by index: '+index);
-		//console.log('selected: '+this.getPressedIndices().toString());
-	    },/*
-	    getRegionByButtonIndex: function(index){
-		var button = this.getItems().items[index],
-		i=0,
-		regionCount = this.regions.count,
-		region={
-		    id: regionCount,
-		    start: index,
-		    end: index,
-		    percentage: 5
-		};
-		for(;i<regionCount;i++){
-		    if(index>=this.regions[i].start || index<=this.regions[i].end){
-			console.log('region found: start='+this.regions[i].start+', end='+this.regions[i].end);
-			return this.regions[i];
-		    }
-		}
-		console.log('new region: start='+region.start+', end='+region.end);
-		return region;
-	    },*/
-	    initializeRegions: function(){
-		var i=0,
-		regionCount=this.regions.length,
-		initialPressedIndices=[],
-		j=0;
-		for(;i<regionCount;i++){
-		    for(j=this.regions[i].start;j<=this.regions[i].end;j++){
-			initialPressedIndices.push(j);
-		    }
-		    this.total+=this.regions[i].percentage;
-		}
-		this.setPressedButtons(initialPressedIndices);
-		//console.log(this.total);
-		
-	    },
-	    recordRegions: function(){
-		var buttons = this.getItems().items,
-		i=0,
-		buttonCount=buttons.length,
-		tempRegions=[],
-		tempRegion=null;
-		this.total=0;
-		for(;i<buttonCount;i++){
-		    if(this.isPressed(buttons[i])){
-			if(tempRegion){
-			    tempRegion.end=i;
-			    if(i==(buttonCount-1)){
-				tempRegion.percentage=((tempRegion.end-tempRegion.start+1)/buttonCount)*100;
-				this.total+=tempRegion.percentage;
-				tempRegions.push(tempRegion);
-				tempRegion=null
-			    }
-			}
-			else{
-			    tempRegion=new Object();
-			    tempRegion.id=tempRegions.length;
-			    tempRegion.start=i;
-			    tempRegion.end=i;
-			}
-		    }
-		    else{
-			if(tempRegion){
-			    tempRegion.percentage=((tempRegion.end-tempRegion.start+1)/buttonCount)*100;
-			    this.total+=tempRegion.percentage;
-			    tempRegions.push(tempRegion);
-			    tempRegion=null;
-			}
-		    }
-		}
-		this.regions=tempRegions;
-		this.displayTotal();
-		//console.log('regions: '+this.regions.toString())
-		//console.log(this.total);
-	    },
-	    displayTotal: function(){
-		Ext.getCmp('rangeSelectorTotal').setValue(this.total+'%');
-	    },
-	    listeners: {
-		element: 'element',
-		touchstart: function(e){
-		    var button = this.getButtonByTouch(e.pageX);
-		    
-		    this.state.inProgress = true;
-		    this.state.touched = button.index;
-		    this.state.lastTouched = null;
-		
-		    this.toggleButtonByIndex(button.index);
-		    //console.log('touchstart over button ' + button.index);
-		    //console.log('touchstart: '+this.getPressedIndices().toString());
-		    //return false;
-		},
-		touchmove: function(e){
-		    var button = this.getButtonByTouch(e.pageX);
-
-		    if(this.state.touched!=button.index){	
-			this.state.lastTouched=this.state.touched
-			this.state.touched=button.index;
-		
-			this.toggleButtonByIndex(this.state.touched);
-			//console.log('touchmove over button ' + button.index);	
-			//console.log('touchmove: '+this.getPressedIndices().toString());
-		    }
-		    //return false;
-		},
-		touchend: function(e){
-		    var button = this.getButtonByTouch(e.pageX);
-		    
-		    this.state.touchInProgress = false;
-		    this.state.touched = null;
-		    this.state.lastTouched = null;
-		    
-		    this.recordRegions();
-		    
-		    //console.log('touchend over button ' + button.index);
-		    //console.log('touchend: '+this.getPressedIndices().toString());
-		    //return false;
-		},
-		tap: function(e){
-		    var button = this.getButtonByTouch(e.pageX);
-
-		    this.toggleButtonByIndex(button.index);
-		    //console.log('tap on button '+button.index);
-		    //console.log('tap: '+this.getPressedIndices().toString());
-		    //return false;
-		},
-		longpress: function(e){
-		    //console.log('longpress: ');
-		},
-		pinch: function(e){
-		    //console.log(e.touches[0].pageX, e.touches[1].pageX);
-		},
-		resize: function(){
-		    this.area = Ext.util.Region.getRegion(this.element);
-		    //console.log('container region recorded');
-		    //console.log(this.area.toString());
-		}
-	    }
+	    ]
 	});
-	rangeSelector.initializeRegions();
-		
-
         // INITIALIZE THE MAIN VIEW
         Ext.create("Ext.TabPanel", {
 	    fullscreen: true,
@@ -630,63 +461,91 @@ Ext.application({
 				{
 				    xtype: 'container',
 				    padding: 10,
-				    items: [rangeSelector]
+				    items: [
+					{
+					    xtype: 'container',
+					    items: [
+						rangeSelector,
+						{
+						    xtype: 'textfield',
+						    id: 'rangeSelectorTotal0',
+						    label: 'Total:',
+						    readOnly: true
+						}
+					    ]
+					},
+					{
+					    xtype: 'container',   
+					    items: [
+						{
+						    xtype: 'rangeselector',
+						    id: 'rangeSelector1'
+						},
+						{
+						    xtype: 'textfield',
+						    id: 'rangeSelectorTotal1',
+						    label: 'Total:',
+						    readOnly: true
+						}
+					    ]
+					}
+				    ]
 				},
 				{
-				    xtype: 'textfield',
-				    id: 'rangeSelectorTotal',
-				    label: 'total',
-				    readOnly: true
+				    xtype: 'button',
+				    text: 'Send',
+				    ui: 'confirm',
+				    handler: function(){
+					var rangeSelector=Ext.getCmp('rangeSelector'),
+					regionString="",
+					i=0,
+					regionCount=rangeSelector.regions.length,
+					region;
+					for(;i<regionCount;i++){
+					    region=rangeSelector.regions[i];
+					    regionString+=(
+						'Region '+region.id+': '+'['+region.start+', '+region.end+'] ('+region.percentage+'%)<br/>'
+					    );
+					}
+					regionString+=('Total duration: '+rangeSelector.total+'%');
+					Ext.Msg.alert(
+					    'Regions:',
+					    regionString,
+					    Ext.emptyFn
+					);
+					//this.up('formpanel').submit();
+				    }
 				}
 			    ]
-			},
-			{
-			    xtype: 'button',
-			    text: 'Send',
-			    ui: 'confirm',
-			    handler: function(){
-				var rangeSelector=Ext.getCmp('rangeSelector'),
-				regionString="",
-				i=0,
-				regionCount = rangeSelector.regions.length,
-				region;
-				for(;i<regionCount;i++){
-				    region=rangeSelector.regions[i];
-				    regionString+=(
-					'Region '+region.id+': '+'['+region.start+', '+region.end+'] ('+region.percentage+'%)<br/>'
-				    );
-				}
-				regionString+=('Total duration: '+rangeSelector.total+'%');
-				Ext.Msg.alert(
-				    'Regions:',
-				    regionString,
-				    Ext.emptyFn
-				);
-				//this.up('formpanel').submit();
-			    }
 			}
 		    ]
 		}
-	    ]
-	});
-    },
-    
-    onUpdated: function(){
-	console.log('updated');
-        Ext.Msg.confirm(
-            "Application Update",
-            "This application has just successfully been updated to the latest version. Reload now?",
-            function(buttonId) {
-                if (buttonId === 'yes') {
-                    window.location.reload();
-                }
-            }
-        );
-    },
+	    ],
+	
 
-    onReady: function(){
-	console.log('ready');
+	    
+	
+	    
+	    
+	    onUpdated: function(){
+		console.log('updated');
+		Ext.Msg.confirm(
+		"Application Update",
+		    "This application has just successfully been updated to the latest version. Reload now?",
+		    function(buttonId) {
+			if (buttonId==='yes') {
+			    window.location.reload();
+			}
+		    }
+		);
+	    },
+	    
+	    onReady: function(){
+		console.log('ready');
+	    }
+	});
     }
 });
 
-
+	
+	
