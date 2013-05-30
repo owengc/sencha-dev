@@ -19,7 +19,7 @@ Ext.Loader.setPath({
     'MyApp': 'app'
 });
 //</debug>
-/*
+
 Ext.define('Standard', {
     extend: 'Ext.data.Model',
     config: {
@@ -50,7 +50,7 @@ Ext.define('Region', {
 	}
     }
 });
-*/
+
 /*Ext.define('iPad2.view.component.RegionSelectorButton', {
     extend: 'Ext.Button',
     xtype: 'rangeselectorbutton',
@@ -99,10 +99,7 @@ Ext.define('iPad2.view.component.RangeSelector', {
 	    touched: null,
 	    lastTouched: null
 	},
-	regions: [
-	    {id: 0, start: 0, end: 4, percentage: 25},
-	    {id: 1, start: 11, end: 18, percentage: 40}
-	],
+	regions: [],
 	total: 0,
 	listeners: {
 	    element: 'element',
@@ -177,6 +174,8 @@ Ext.define('iPad2.view.component.RangeSelector', {
  
     constructor: function(config) {
 	this.callParent(config);
+	this.setRegions(config.regions || []);
+
 
 	var increment=this.getIncrement(),
 	numButtons=(100/increment),
@@ -432,8 +431,7 @@ Ext.application({
 	rangeSelector=Ext.create('iPad2.view.component.RangeSelector', {
 	    id: 'rangeSelector0',
 	    regions: [
-		{id: 0, start: 0, end: 4, percentage: 25},
-		{id: 1, start: 11, end: 18, percentage: 40}
+		{id: 0, start: 5, end: 14, percentage: 50}
 	    ]
 	});
         // INITIALIZE THE MAIN VIEW
@@ -479,7 +477,11 @@ Ext.application({
 					    items: [
 						{
 						    xtype: 'rangeselector',
-						    id: 'rangeSelector1'
+						    id: 'rangeSelector1',
+						    regions: [
+							{id: 0, start: 0, end: 4, percentage: 25},
+							{id: 1, start: 11, end: 18, percentage: 40}
+						    ]
 						},
 						{
 						    xtype: 'textfield',
