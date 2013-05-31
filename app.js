@@ -97,7 +97,10 @@ Ext.define('iPad2.view.component.RangeSelector', {
 	state: {
 	    touchInProgress: false,
 	    touched: null,
-	    lastTouched: null
+	    lastTouched: null,
+	    direction: null,
+	    lastDirection: null,
+	    reversed: false
 	},
 	regions: [],
 	total: 0,
@@ -106,35 +109,74 @@ Ext.define('iPad2.view.component.RangeSelector', {
 	    touchstart: function(e){
 		var button=this.getButtonByTouch(e.pageX),
 		state=this.getState();
+		state.position=e.pageX
 
 		if(button){
 		    state.touchInProgress=true;
 		    state.touched=button.index;
 		    state.lastTouched=null;
-		    this.toggleButtonByIndex(button.index);
-		    //console.log('touchstart over button ' + buttonId);
+		    state.direction=null;
+		    state.lastDirection=null;
+		    state.reversed=false;
+
+		    this.toggleButtonByIndex(state.touched);
+		    //console.log('touchstart over button ' + button.index);
 		    //console.log('touchstart: '+this.getPressedIndices().toString());
 		}
 	    },
 	    touchmove: function(e){
 		var button=this.getButtonByTouch(e.pageX),
 		state=this.getState();
+		
+		if(button && state.touchInProgress && state.touched!=button.index){    
 
-		if(button && state.touchInProgress && state.touched!=button.index){	
 		    state.lastTouched=state.touched
 		    state.touched=button.index;
 		    
+		    state.lastDirection=state.direction;
+		    state.direction=(state.lastTouched<state.touched)?'right':'left';
+
+		    state.reversed=(state.lastDirection!=null && state.direction!=state.lastDirection)?true:false;
+		    
 		    var lastButton=this.getButtonByIndex(state.lastTouched);
-		    if(this.isPressed(lastButton)==this.isPressed(button)){
-			state.touchInProgress=false;
+
+		    /*this block helps deal with buggy/missing touchmove events*/
+		    if(Math.abs(state.touched-state.lastTouched)>1){
+			var gapStart=(state.direction=='right')?state.lastTouched+1:state.touched+1,
+			gapEnd=(state.direction=='right')?state.touched-1:state.lastTouched-1,
+			i=gapStart;
+			for(;i<=gapEnd;i++){
+			    if(this.isPressed(lastButton)){
+				this.activateButtonByIndex(i);
+			    }
+			    else{
+				this.deactivateButtonByIndex(i);
+			    }
+			    //console.log('skipped button '+ i);
+			}
+		    }
+		    
+		    if(!state.reversed){
+			if(this.isPressed(lastButton)==this.isPressed(button)){
+			    state.touchInProgress=false;
+			}
+			else{
+			    this.toggleButtonByIndex(state.touched);
+			    this.recordTotal();
+			    //console.log('touchmove over button ' + button.index + '|pageX: ' + e.pageX + ', pageY: ' + e.pageY);
+			}
 		    }
 		    else{
-			this.toggleButtonByIndex(button.index);
+			//console.log('reversed|last=' + state.lastTouched + 'current=' + state.touched);
+			this.toggleButtonByIndex(state.lastTouched);
+			this.toggleButtonByIndex(state.touched);
 			this.recordTotal();
-		    }
+			//console.log('touchmove over button ' + button.index + '|pageX: ' + e.pageX + ', pageY: ' + e.pageY);
+		    }	
 		    //console.log('touchmove over button ' + button.index);	
 		    //console.log('touchmove: '+this.getPressedIndices().toString());
 		}
+		    
 	    },
 	    touchend: function(e){
 		var button=this.getButtonByTouch(e.pageX),
@@ -143,9 +185,11 @@ Ext.define('iPad2.view.component.RangeSelector', {
 		state.touchInProgress=false;
 		state.touched=null;
 		state.lastTouched=null;
+		state.direction=null,
+		state.lastDirection=null,
+		state.reverse=false;
 		
 		this.recordRegions();
-		
 		//console.log('touchend over button ' + button.index);
 		//console.log('touchend: '+this.getPressedIndices().toString());
 	    },
@@ -164,10 +208,14 @@ Ext.define('iPad2.view.component.RangeSelector', {
 	    pinch: function(e){
 		//console.log(e.touches[0].pageX, e.touches[1].pageX);
 	    },
-	    resize: function(){
-		this.setArea(Ext.util.Region.getRegion(this.element));
-		//console.log('container region recorded');
-		//console.log(this.area.toString());
+	    resize: {
+		buffer: 100,
+		fn: function(){
+		    console.log('selector resized', this.element.dom.scrollWidth);
+		    this.setArea(Ext.util.Region.getRegion(this.element));
+		    //console.log('container region recorded');
+		    //console.log(this.area.toString());
+		}
 	    }
 	}
     },
@@ -193,6 +241,9 @@ Ext.define('iPad2.view.component.RangeSelector', {
 		    resize: function(){
 			var buttonContext=this;
 			buttonContext.area=Ext.util.Region.getRegion(this.element);
+		
+			/*if(buttonContext.index==0){
+			    console.log('leftmost button position: ', buttonContext.area.)*/
 			//console.log('button regions recorded');
 			//console.log(buttonContext.area.toString());
 		    }
@@ -262,6 +313,47 @@ Ext.define('iPad2.view.component.RangeSelector', {
 	else{
 	    pressedIndicesNew=pressedIndicesOld;
 	    pressedIndicesNew.push(index);
+	}
+	//console.log('pressedIndicesNew: '+pressedIndicesNew.toString());
+	this.setPressedButtons(pressedIndicesNew);
+	//console.log('toggled by index: '+index);
+	//console.log('selected: '+this.getPressedIndices().toString());
+    },
+    activateButtonByIndex: function(index){
+	var button=this.getItems().items[index],
+	pressedIndicesOld=this.getPressedIndices(),
+	pressedIndicesNew=[],
+	wasPressed=this.isPressed(button);
+
+	if(wasPressed){
+	    return;
+	}
+	else{
+	    pressedIndicesNew=pressedIndicesOld;
+	    pressedIndicesNew.push(index);
+	}
+	//console.log('pressedIndicesNew: '+pressedIndicesNew.toString());
+	this.setPressedButtons(pressedIndicesNew);
+	//console.log('toggled by index: '+index);
+	//console.log('selected: '+this.getPressedIndices().toString());
+    },
+    deactivateButtonByIndex: function(index){
+	var button=this.getItems().items[index],
+	pressedIndicesOld=this.getPressedIndices(),
+	pressedIndicesNew=[],
+	wasPressed=this.isPressed(button);
+
+	if(wasPressed){
+	    //console.log('pressedIndicesOld: '+pressedIndicesOld.toString());
+	    var i=0, pressedButtonCountOld=pressedIndicesOld.length;
+	    for(;i<pressedButtonCountOld;i++){
+		if(pressedIndicesOld[i]!=index){
+		    pressedIndicesNew.push(pressedIndicesOld[i]);
+		}
+	    }
+	}
+	else{
+	    return;
 	}
 	//console.log('pressedIndicesNew: '+pressedIndicesNew.toString());
 	this.setPressedButtons(pressedIndicesNew);

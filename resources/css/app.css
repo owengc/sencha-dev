@@ -4094,12 +4094,27 @@ body.x-desktop {
 }
 
 .o-rangeselector .x-button.x-button-pressed {
-    background: rgba(255, 245, 10, 1);
+    /*YELLOW*/
+    /*background: rgba(255, 245, 10, 1);
     background-image: -webkit-gradient(linear, 100% 100%, 0, 100% 100%, 24, color-stop(0%, rgba(255, 235, 0, 0)), color-stop(75%, rgba(255, 160, 0, 0.7)));
     background-image: -webkit-linear-gradient(rgba(255, 235, 0, 0), rgba(255, 160, 0, 0.7) 75%);
     background-image: -moz-linear-gradient(rgba(225, 255, 235, 0, 0), rgba(255, 160, 0, 0.7) 75%);
     background-image: -o-linear-gradient(rgba(225, 255, 235, 0, 0), rgba(255, 160, 0, 0.7) 75%);
-    background-image: linear-gradient(rgba(255, 235, 0, 0), rgba(255, 160, 0, 0.7) 75%);
+    background-image: linear-gradient(rgba(255, 235, 0, 0), rgba(255, 160, 0, 0.7) 75%);*/
+    /*SENCHA BLUE*/
+    /*background: rgba(22, 118, 185, 1);
+    background-image: -webkit-gradient(linear, 100% 100%, 0, 100% 100%, color-stop(0%, rgba(17, 89, 140, 0)), color-stop(75%, rgba(11, 60, 94, 0.7)));
+    background-image: -webkit-linear-gradient(rgba(17, 89, 140, 0), rgba(11, 60, 94, 0.7) 75%);
+    background-image: -moz-linear-gradient(rgba(225, 17, 89, 140, 0), rgba(11, 60, 94, 0.7) 75%);
+    background-image: -o-linear-gradient(rgba(225, 17, 89, 140, 0), rgba(11, 60, 94, 0.7) 75%);
+    background-image: linear-gradient(rgba(17, 89, 140, 0), rgba(11, 60, 94, 0.7) 75%);*/
+    /*SENCHA GREEN*/
+    background: rgba(141, 201, 0, 1);
+    background-image: -webkit-gradient(linear, 100% 100%, 0, 100% 100%, color-stop(0%, rgba(126, 177, 5, 0)), color-stop(75%, rgba(91, 127, 3, 0.7)));
+    background-image: -webkit-linear-gradient(rgba(126, 177, 5, 0), rgba(91, 127, 3, 0.7) 75%);
+    background-image: -moz-linear-gradient(rgba(225, 126, 177, 5, 0), rgba(91, 127, 3, 0.7) 75%);
+    background-image: -o-linear-gradient(rgba(225, 126, 177, 5, 0), rgba(91, 127, 3, 0.7) 75%);
+    background-image: linear-gradient(rgba(126, 177, 5, 0), rgba(91, 127, 3, 0.7) 75%);
 }
 
 /*...CUSTOM*/
