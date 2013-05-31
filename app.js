@@ -20,7 +20,7 @@ Ext.Loader.setPath({
 });
 //</debug>
 
-Ext.define('Standard', {
+/*Ext.define('Standard', {
     extend: 'Ext.data.Model',
     config: {
 	fields: [
@@ -49,7 +49,7 @@ Ext.define('Region', {
 	    name: 'standard'
 	}
     }
-});
+});*/
 
 /*Ext.define('iPad2.view.component.RegionSelectorButton', {
     extend: 'Ext.Button',
@@ -80,8 +80,8 @@ Ext.define('iPad2.view.component.RangeSelector', {
     alias: 'widget.rangeselector',
     xtype: 'rangeselector',
     requires: [
-	'Ext.SegmentedButton',
-	'Ext.Button'
+	'Ext.Button',
+	'Ext.util.Region'
     ],
     config: {
 	layout: {
@@ -366,7 +366,7 @@ Ext.define('iPad2.view.component.RangeSelector', {
     }
 });
 
-var chart, rangeSelector;
+
 
 Ext.application({
     name: 'MyApp',
@@ -374,15 +374,9 @@ Ext.application({
     requires: [
 	'Ext.MessageBox',
 	'Ext.TabPanel',
-	'Ext.data.proxy.JsonP',
 	'Ext.form.FieldSet',
 	'Ext.form.Panel',
 	'Ext.field.Number',
-	'Ext.data.Store',
-	'Ext.SegmentedButton',
-	'Ext.Array',
-	'Ext.util.Region',
-	'Ext.util.Point'
     ],
     
     views: [
@@ -412,23 +406,8 @@ Ext.application({
 	// Destroy the #appLoadingIndicator element
         Ext.fly('appLoadingIndicator').destroy();
 	
-	
-	var regionStore=Ext.create('Ext.data.Store', {
-	    model: 'Standard',
-	    data: [
-		{
-		    id: 0,
-		    desc: 'Multiplication',
-		    num: 7,
-		    regions: [
-			{id: 0, start: 0, end: 4, percentage: 25},
-			{id: 1, start: 11, end: 18, percentage: 35}
-		    ]
-		}
-	    ]
-	});
 
-	rangeSelector=Ext.create('iPad2.view.component.RangeSelector', {
+	var rangeSelector=Ext.create('iPad2.view.component.RangeSelector', {
 	    id: 'rangeSelector0',
 	    regions: [
 		{id: 0, start: 5, end: 14, percentage: 50}
@@ -444,7 +423,7 @@ Ext.application({
 		    title: 'Log',
 		    iconCls: 'user',
 		    xtype: 'formpanel',
-		    url: 'contact.php',
+		    url: '#',
 		    layout: {
 			type: 'vbox',
 			align: 'stretch'
@@ -453,8 +432,8 @@ Ext.application({
 		    items: [
 			{
 			    xtype: 'fieldset',
-			    title: 'Lesson Breakdown',
-			    instructions: 'enter length of lesson and then specify regions',
+			    title: 'Slider Demo',
+			    instructions: 'specify regions',
 			    items: [
 				{
 				    xtype: 'container',
