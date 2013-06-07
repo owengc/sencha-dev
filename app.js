@@ -86,9 +86,11 @@ Ext.define('iPad2.view.component.RangeSelector', {
     config: {
 	layout: {
 	    type: 'hbox',
-	    pack: 'center',
-	    align: 'stretchmax'
+	    pack: 'start',
+	    align: 'stretch',
 	},
+	width: '100%',
+	height: '100%',
 	cls: 'o-rangeselector',
 	allowMultiple: true,
 	increment: 5,
@@ -202,16 +204,10 @@ Ext.define('iPad2.view.component.RangeSelector', {
 		    //console.log('tap: '+this.getPressedIndices().toString());
 		}
 	    },
-	    longpress: function(e){
-		//console.log('longpress: ');
-	    },
-	    pinch: function(e){
-		//console.log(e.touches[0].pageX, e.touches[1].pageX);
-	    },
 	    resize: {
 		buffer: 100,
 		fn: function(){
-		    console.log('selector resized', this.element.dom.scrollWidth);
+		    //console.log('selector resized', this.element.dom.scrollWidth);
 		    this.setArea(Ext.util.Region.getRegion(this.element));
 		    //console.log('container region recorded');
 		    //console.log(this.area.toString());
@@ -223,7 +219,6 @@ Ext.define('iPad2.view.component.RangeSelector', {
     constructor: function(config) {
 	this.callParent(config);
 	this.setRegions(config.regions || []);
-
 
 	var increment=this.getIncrement(),
 	numButtons=(100/increment),
@@ -241,9 +236,6 @@ Ext.define('iPad2.view.component.RangeSelector', {
 		    resize: function(){
 			var buttonContext=this;
 			buttonContext.area=Ext.util.Region.getRegion(this.element);
-		
-			/*if(buttonContext.index==0){
-			    console.log('leftmost button position: ', buttonContext.area.)*/
 			//console.log('button regions recorded');
 			//console.log(buttonContext.area.toString());
 		    }
@@ -454,7 +446,7 @@ Ext.define('iPad2.view.component.RangeSelector', {
 	this.displayTotal();
     },
     displayTotal: function(){
-	this.up().down('textfield').setValue(Math.round(this.getTotal())+'%');
+	this.up().up().query('textfield')[1].setValue(Math.round(this.getTotal())+'%');
     }
 });
 
@@ -500,10 +492,11 @@ Ext.application({
 	
 
 	var rangeSelector=Ext.create('iPad2.view.component.RangeSelector', {
-	    id: 'rangeSelector0',
+	    id: 'rangeSelector1',
 	    regions: [
 		{id: 0, start: 5, end: 14, percentage: 50}
-	    ]
+	    ],
+	    
 	});
         // INITIALIZE THE MAIN VIEW
         Ext.create("Ext.TabPanel", {
@@ -520,75 +513,89 @@ Ext.application({
 			type: 'vbox',
 			align: 'stretch'
 		    },
-		    
 		    items: [
 			{
 			    xtype: 'fieldset',
 			    title: 'Slider Demo',
 			    instructions: 'specify regions',
+			    
 			    items: [
 				{
 				    xtype: 'container',
-				    padding: 10,
+				    layout: {
+					type: 'hbox',
+					pack: 'start',
+					align: 'stretch'
+				    },
 				    items: [
+					{
+					    xtype: 'textfield',
+					    id: 'rangeSelectorCode0',
+					    label: null,
+					    readOnly: true,
+					    value: 'A493.9',
+					    labelWidth: 0,
+					    width: '5%'
+					},
 					{
 					    xtype: 'container',
 					    items: [
-						rangeSelector,
-						{
-						    xtype: 'textfield',
-						    id: 'rangeSelectorTotal0',
-						    label: 'Total:',
-						    readOnly: true
-						}
-					    ]
-					},
-					{
-					    xtype: 'container',   
-					    items: [
 						{
 						    xtype: 'rangeselector',
-						    id: 'rangeSelector1',
+						    id: 'rangeSelector0',
 						    regions: [
 							{id: 0, start: 0, end: 4, percentage: 25},
 							{id: 1, start: 11, end: 18, percentage: 40}
 						    ]
 						},
-						{
-						    xtype: 'textfield',
-						    id: 'rangeSelectorTotal1',
-						    label: 'Total:',
-						    readOnly: true
-						}
-					    ]
+					    ],
+					    width: '90%'
+					},
+					{
+					    xtype: 'textfield',
+					    id: 'rangeSelectorTotal0',
+					    label: '',
+					    readOnly: true,
+					    width: '5%'
 					}
 				    ]
-				}/*,
+				},
 				{
-				    xtype: 'button',
-				    text: 'Send',
-				    ui: 'confirm',
-				    handler: function(){
-					var rangeSelector=Ext.getCmp('rangeSelector'),
-					regionString="",
-					i=0,
-					regionCount=rangeSelector.regions.length,
-					region;
-					for(;i<regionCount;i++){
-					    region=rangeSelector.regions[i];
-					    regionString+=(
-						'Region '+region.id+': '+'['+region.start+', '+region.end+'] ('+region.percentage+'%)<br/>'
-					    );
+				    xtype: 'container',   
+				    layout: {
+					type: 'vbox'
+				    },
+				    height: 100,
+				    items: [
+					{
+					    flex: 1,
+					    xtype: 'textfield',
+					    id: 'rangeSelectorCode1',
+					    label: '',
+					    readOnly: true,
+					    value: 'A759.2',
+					    labelWidth: '0px',
+					    width: '5%'
+					},
+					{
+					    flex: 1,
+					    xtype: 'textfield',
+					    id: 'rangeSelectorTotal1',
+					    label: '',
+					    readOnly: true,
+					    labelWidth: '0px',
+					    width: '5%'
+					},
+					{
+					    docked: 'right',
+					    xtype: 'container',
+					    items: [
+						rangeSelector
+					    ],
+					    width: '90%'
 					}
-					regionString+=('Total duration: '+rangeSelector.total+'%');
-					Ext.Msg.alert(
-					    'Regions:',
-					    regionString,
-					    Ext.emptyFn
-					);
-					//this.up('formpanel').submit();
-				    }
-				}*/
+				    ]
+				}
 			    ]
 			}
 		    ]
