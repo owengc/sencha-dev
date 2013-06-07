@@ -51,61 +51,102 @@ Ext.define('Region', {
     }
 });*/
 
-/*Ext.define('iPad2.view.component.RegionSelectorButton', {
-    extend: 'Ext.Button',
-    xtype: 'rangeselectorbutton',
-    requires: [
-	'Ext.Button',
-	'Ext.util.Region'
-    ],
-    config: {
-	index: null,
-	text: '&nbsp;',
-	width: '5%',
-	area: {},
-	pressed: false,
-	listeners: {
-	    element: 'element',
-	    resize: function(){
-		this.setArea(Ext.util.Region.getRegion(this.element));
-		//console.log('button regions recorded');
-		//console.log(buttonContext.area.toString());
-	    }
-	}
-    }
-});*/
-
+/*USE THIS!!! http://www.sencha.com/learn/touch-drawing-and-charting/*/
 Ext.define('iPad2.view.component.RangeSelector', {
-    extend: 'Ext.SegmentedButton',
+    extend: 'Ext.draw.Component',
     alias: 'widget.rangeselector',
     xtype: 'rangeselector',
     requires: [
-	'Ext.Button',
+	//'Ext.Button',
 	'Ext.util.Region'
     ],
     config: {
-	layout: {
+	/*layout: {
 	    type: 'hbox',
 	    pack: 'center',
 	    align: 'stretchmax'
 	},
+	allowMultiple: true,*/
 	cls: 'o-rangeselector',
-	allowMultiple: true,
 	increment: 5,
 	area: {},
 	items: [],
 	state: {
-	    touchInProgress: false,
-	    touched: null,
-	    lastTouched: null,
+	    activeRegion: null,
+	    inProgress: false,
+	    startPos: null,
+	    currentPos: null,
+	    endPos: null,
 	    direction: null,
 	    lastDirection: null,
 	    reversed: false
 	},
 	regions: [],
 	total: 0,
+	border: 1,
+	style: 'border-color: lightgrey; border-style: solid',
+	minHeight: '50px',
 	listeners: {
-	    element: 'element',
+	    touchstart: {
+		fn: function(e){
+		    var me = Ext.ComponentQuery.query('#'+this._itemId)[0];
+		    me._state.inProgress=true;
+		    me._state.startPos=e.pageX;
+		    me._state.currentPos=e.pageX;
+		    me._state.endPos=e.pageX;
+		    me._state.activeRegion = me.getSurface('main').add({
+			type: 'rect',
+			x: e.pageX,
+			y: 0,
+			width: 0,
+			height: 50,
+			fillStyle: 'blue',
+			listeners: {
+			    element: 'element',
+			    tap: function(){
+				console.log('tapped sprite');
+			    }
+			}
+		    });
+		},
+		element: 'element'
+	    },
+	    touchmove: {
+		fn: function(e){
+		    var me = Ext.ComponentQuery.query('#'+this._itemId)[0];
+		    me._state.currentPos=e.pageX;
+		    if(me._state.currentPos>me._state.startPos){
+			me._state.direction='right';
+		    }
+		    else{
+			me._state.direction='left';
+		    }
+		    if(me._state.direction=='right'){
+			me._state.activeRegion.setAttributes({
+			    width: me._state.currentPos-me._state.startPos
+			});
+		    }
+		    else{
+			me._state.activeRegion.setAttributes({
+			    x: me._state.currentPos,
+			    width: me._state.startPos-me._state.currentPos
+			});
+		    }
+		    me.getSurface('main').renderFrame();
+		},
+		element: 'element'
+	    },
+	    touchend: {
+		fn: function(e){
+		    var me = Ext.ComponentQuery.query('#'+this._itemId)[0];
+		    me._state.inProgress=false;
+		    me._state.currentPos=e.pageX;
+		    me._state.endPos=e.pageX;
+		},
+		element: 'element'
+	    }
+	    /*
+
 	    touchstart: function(e){
 		var button=this.getButtonByTouch(e.pageX),
 		state=this.getState();
@@ -140,7 +181,7 @@ Ext.define('iPad2.view.component.RangeSelector', {
 		    
 		    var lastButton=this.getButtonByIndex(state.lastTouched);
 
-		    /*this block helps deal with buggy/missing touchmove events*/
+		    //this block helps deal with buggy/missing touchmove events
 		    if(Math.abs(state.touched-state.lastTouched)>1){
 			var gapStart=(state.direction=='right')?state.lastTouched+1:state.touched+1,
 			gapEnd=(state.direction=='right')?state.touched-1:state.lastTouched-1,
@@ -216,7 +257,7 @@ Ext.define('iPad2.view.component.RangeSelector', {
 		    //console.log('container region recorded');
 		    //console.log(this.area.toString());
 		}
-	    }
+	    }*/
 	}
     },
  
@@ -228,7 +269,7 @@ Ext.define('iPad2.view.component.RangeSelector', {
 	var increment=this.getIncrement(),
 	numButtons=(100/increment),
 	i=0;
-
+	/*
 	for(;i<numButtons;i++){
 	    var button=Ext.create('Ext.Button', {
 		index: i,
@@ -242,20 +283,19 @@ Ext.define('iPad2.view.component.RangeSelector', {
 			var buttonContext=this;
 			buttonContext.area=Ext.util.Region.getRegion(this.element);
 		
-			/*if(buttonContext.index==0){
-			    console.log('leftmost button position: ', buttonContext.area.)*/
+			
 			//console.log('button regions recorded');
 			//console.log(buttonContext.area.toString());
 		    }
 		}
 	    });
 	    this.add(button);
-	}
+	}*/
 	this.initializeRegions();
 	//console.log(this.getItems().items);
     },
     
-    getButtonByTouch: function(pageX){
+    /*getButtonByTouch: function(pageX){
 	var buttons=this.getItems().items,
 	buttonCount=buttons.length,
 	button,
@@ -393,10 +433,10 @@ Ext.define('iPad2.view.component.RangeSelector', {
 	    }
 	    total+=regions[i].percentage;
 	}
-	this.setPressedButtons(initialPressedIndices);
-	this.setTotal(total);
+	//this.setPressedButtons(initialPressedIndices);
+	//this.setTotal(total);
 	//console.log(this.getTotal());	
-    },
+    }/*,
     recordRegions: function(){
 	var buttons=this.getItems().items,
 	buttonCount=buttons.length,
@@ -455,7 +495,7 @@ Ext.define('iPad2.view.component.RangeSelector', {
     },
     displayTotal: function(){
 	this.up().down('textfield').setValue(Math.round(this.getTotal())+'%');
-    }
+    }*/
 });
 
 
