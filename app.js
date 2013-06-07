@@ -211,7 +211,7 @@ Ext.define('iPad2.view.component.RangeSelector', {
 	    resize: {
 		buffer: 100,
 		fn: function(){
-		    console.log('selector resized', this.element.dom.scrollWidth);
+		    //console.log('selector resized', this.element.dom.scrollWidth);
 		    this.setArea(Ext.util.Region.getRegion(this.element));
 		    //console.log('container region recorded');
 		    //console.log(this.area.toString());
