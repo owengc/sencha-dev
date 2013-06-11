@@ -48,8 +48,8 @@ Ext.define('iPad2.view.component.RangeSelector', {
 	    align: 'stretchmax'
 	},
 	cls: 'o-rangeselector',//Important for CSS styling
-	allowMultiple: true,
-	increment: 5,
+	allowMultiple: true,//Do not change
+	increment: 5,//This determines the granularity (number of buttons) of the RangeSelector. For example, default value of 5 results in 20 buttons, each worth 5% of total
 	area: {},//This stores the Ext.util.Region associated with the area of the screen the RangeSelector occupies when drawn in the browser 
 	items: [],//This stores the buttons
 	state: { //This stores state variables used by the touchstart, touchmove, and touchend event handlers
@@ -60,7 +60,7 @@ Ext.define('iPad2.view.component.RangeSelector', {
 	    lastDirection: null, //Set to the direction the touch was previously heading ('right' or 'left')
 	    reversed: false //Set to true when direction!=lastDirection, false otherwise
 	},
-	regions: [],
+	regions: '',//This stores the region data, each button is represented by either a 0 or 1 in the string
 	total: 0,//This stores the total % currently indicated on the slider
 	totalPercentCmp: '',//This stores the itemId of the component used to display the total % (established via config when RangeSelector is instantiated)
 	totalMinutesCmp: '',//This stores the itemId of the component used to display the total minutes (established via config when RangeSelector is instantiated)
@@ -254,14 +254,11 @@ Ext.define('iPad2.view.component.RangeSelector', {
      */
     constructor: function(config){
 	this.callParent(config); //Important - takes care of establishing everything associated with the parent class (SegmentedButton)
-	this.setRegions(config.regions || []);//Pull in region data is available, otherwise initialize to empty state.
-	this.setTotalPercentCmp(config.totalPercentCmp);
-	this.setTotalMinutesCmp(config.totalMinutesCmp);
-	this.setDurationCmp(config.durationCmp);
 
 	//Establish number of buttons given increment setting
-	var increment=this.getIncrement(),
+	var increment=this.getIncrement(),//default of 5 is given in class definition config above
 	numButtons=(100/increment),
+	regions='',
 	i=0;
 
 	//Create and initialize buttons
@@ -274,7 +271,13 @@ Ext.define('iPad2.view.component.RangeSelector', {
 		pressed: false //default to not pressed
 	    });
 	    this.add(button);
+	    regions+='0';//build empty region string for default empty state
 	}
+	
+	this.setRegions(config.regions || regions);//Pull in region data is available, otherwise initialize to empty state.
+	this.setTotalPercentCmp(config.totalPercentCmp);
+	this.setTotalMinutesCmp(config.totalMinutesCmp);
+	this.setDurationCmp(config.durationCmp);
 	this.initializeRegions();//Now that the buttons are in place, set them to 'on' or 'off' according to region data
 	//console.log(this.getItems().items);
     },
@@ -408,10 +411,11 @@ Ext.define('iPad2.view.component.RangeSelector', {
     /*
       initializeRegions - This function is responsible for using the region data (if available) retrieved from the server to initialize
       the state of each button when the RangeSelector is first displayed. It also establishes the initial value for RangeSelector.total
-      based on the region data. Uses SegmentedButton's setPressedButtons function.
+      based on the region data. Uses SegmentedButton's setPressedButtons function. Code written to handle previous, object-style region
+      data has been commented out and replaced by code that handles string representation of the region data
      */
     initializeRegions: function(){
-	var regions=this.getRegions(),
+	/*var regions=this.getRegions(),
 	regionCount=regions.length,
 	initialPressedIndices=[],
 	i=0,
@@ -423,17 +427,29 @@ Ext.define('iPad2.view.component.RangeSelector', {
 		initialPressedIndices.push(j);
 	    }
 	    total+=regions[i].percentage;
+	}*/
+	var regions=this.getRegions(),
+	buttonCount=regions.length,
+	increment=this.getIncrement(),
+	initialPressedIndices=[],
+	total=0,
+	i=0;
+	for(;i<buttonCount;i++){
+	    if(regions.charAt(i)=='1'){
+		initialPressedIndices.push(i);
+		total+=increment;
+	    }
 	}
 	this.setPressedButtons(initialPressedIndices);
 	this.setTotal(total);
 	//console.log(this.getTotal());	
     },
     /*
-      recordRegions - This function updates the region data to match the current state of the buttons in the RangeSelector. Code
-      written to handle previous, object-style region data has been commented out and replaced by code that handles string
-      representation of the region data. Total % is tallied and displayed as well.
+      recordRegions - This function updates the region data to match the current state of the buttons in the RangeSelector. Total is 
+      tallied and displayed as well. Code written to handle previous, object-style region data has been commented out and replaced by
+      code that handles string representation of the region data. 
      */
-    recordRegions: function(){
+    recordRegions: function(){/*
 	var buttons=this.getItems().items,
 	buttonCount=buttons.length,
 	tempRegions=[],
@@ -466,6 +482,24 @@ Ext.define('iPad2.view.component.RangeSelector', {
 		    tempRegions.push(tempRegion);
 		    tempRegion=null;
 		}
+	    }
+	}*/
+	
+
+	var buttons=this.getItems().items,
+	buttonCount=buttons.length,
+	increment=this.getIncrement(),
+	tempRegions='',
+	i=0,
+	total=0;
+	
+	for(;i<buttonCount;i++){
+	    if(this.isPressed(buttons[i])){
+		tempRegions+='1';
+		total+=increment;
+	    }
+	    else{
+		tempRegions+='0';
 	    }
 	}
 	this.setRegions(tempRegions);
@@ -569,9 +603,7 @@ Ext.application({
 	    totalPercentCmp: 'rs0_percent',
 	    totalMinutesCmp: 'rs0_minutes',
 	    durationCmp: 'duration',
-	    regions: [
-		{id: 0, start: 5, end: 14, percentage: 50}
-	    ]
+	    regions: '00001111111111000000'
 	});
         // INITIALIZE THE MAIN VIEW
         Ext.create("Ext.TabPanel", {
@@ -652,10 +684,7 @@ Ext.application({
 						    totalPercentCmp: 'rs1_percent',
 						    totalMinutesCmp: 'rs1_minutes',
 						    durationCmp: 'duration',
-						    regions: [
-							{id: 0, start: 0, end: 4, percentage: 25},
-							{id: 1, start: 11, end: 18, percentage: 40}
-						    ]
+						    regions: '11110000001111111100'
 						},
 						{
 						    xtype: 'textfield',
@@ -672,32 +701,32 @@ Ext.application({
 					    ]
 					}
 				    ]
-				}/*,
+				},
 				{
 				    xtype: 'button',
 				    text: 'Send',
 				    ui: 'confirm',
 				    handler: function(){
-					var rangeSelector=Ext.getCmp('rangeSelector'),
-					regionString="",
-					i=0,
-					regionCount=rangeSelector.regions.length,
-					region;
-					for(;i<regionCount;i++){
-					    region=rangeSelector.regions[i];
-					    regionString+=(
-						'Region '+region.id+': '+'['+region.start+', '+region.end+'] ('+region.percentage+'%)<br/>'
+					var rangeSelectors=Ext.ComponentQuery.query('rangeselector'),
+					rangeSelectorCount=rangeSelectors.length,
+					rangeSelector,
+					outString='',
+					i=0;
+					for(;i<rangeSelectorCount;i++){
+					    rangeSelector=rangeSelectors[i];
+					    outString+=(
+						'RangeSelector #'+(i+1)+': '+'['+rangeSelector.getRegions()+'] ('+rangeSelector.getTotal()+'%)<br/>'
 					    );
 					}
-					regionString+=('Total duration: '+rangeSelector.total+'%');
+					console.log(outString);
 					Ext.Msg.alert(
 					    'Regions:',
-					    regionString,
+					    outString,
 					    Ext.emptyFn
 					);
 					//this.up('formpanel').submit();
 				    }
-				}*/
+				}
 			    ]
 			}
 		    ]
