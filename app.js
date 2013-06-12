@@ -249,11 +249,11 @@ Ext.define('iPad2.view.component.RangeSelector', {
 	}
     },
     /*
-      constructor - This function initializes the RangeSelector using values specified in the config object. SegmentedButton constructor
-      must be called first [this.callParent(config)].
+      initialize - This function initializes the RangeSelector using values specified in the config object. SegmentedButton constructor
+      must be called first [this.callParent()].
      */
-    constructor: function(config){
-	this.callParent(config); //Important - takes care of establishing everything associated with the parent class (SegmentedButton)
+    initialize: function(){
+	this.callParent(); //Important - takes care of establishing everything associated with the parent class (SegmentedButton)
 
 	//Establish number of buttons given increment setting
 	var increment=this.getIncrement(),//default of 5 is given in class definition config above
@@ -274,10 +274,10 @@ Ext.define('iPad2.view.component.RangeSelector', {
 	    regions+='0';//build empty region string for default empty state
 	}
 	
-	this.setRegions(config.regions || regions);//Pull in region data is available, otherwise initialize to empty state.
-	this.setTotalPercentCmp(config.totalPercentCmp);
-	this.setTotalMinutesCmp(config.totalMinutesCmp);
-	this.setDurationCmp(config.durationCmp);
+	this.setRegions(this.config.regions || regions);//Pull in region data is available, otherwise initialize to empty state.
+	this.setTotalPercentCmp(this.config.totalPercentCmp);
+	this.setTotalMinutesCmp(this.config.totalMinutesCmp);
+	this.setDurationCmp(this.config.durationCmp);
 	this.initializeRegions();//Now that the buttons are in place, set them to 'on' or 'off' according to region data
 	//console.log(this.getItems().items);
     },
@@ -718,7 +718,6 @@ Ext.application({
 						'RangeSelector #'+(i+1)+': '+'['+rangeSelector.getRegions()+'] ('+rangeSelector.getTotal()+'%)<br/>'
 					    );
 					}
-					console.log(outString);
 					Ext.Msg.alert(
 					    'Regions:',
 					    outString,
